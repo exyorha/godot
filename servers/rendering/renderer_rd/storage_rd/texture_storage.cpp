@@ -1719,9 +1719,9 @@ Ref<Image> TextureStorage::_validate_texture_format(const Ref<Image> &p_image, T
 			r_format.swizzle_a = RD::TEXTURE_SWIZZLE_IDENTITY;
 		} break;
 		case Image::FORMAT_DXT1: {
-			if (RD::get_singleton()->texture_is_format_supported_for_usage(RD::DATA_FORMAT_BC1_RGB_UNORM_BLOCK, RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_CAN_UPDATE_BIT)) {
-				r_format.format = RD::DATA_FORMAT_BC1_RGB_UNORM_BLOCK;
-				r_format.format_srgb = RD::DATA_FORMAT_BC1_RGB_SRGB_BLOCK;
+			if (RD::get_singleton()->texture_is_format_supported_for_usage(RD::DATA_FORMAT_BC1_RGBA_UNORM_BLOCK, RD::TEXTURE_USAGE_SAMPLING_BIT | RD::TEXTURE_USAGE_CAN_UPDATE_BIT)) {
+				r_format.format = RD::DATA_FORMAT_BC1_RGBA_UNORM_BLOCK;
+				r_format.format_srgb = RD::DATA_FORMAT_BC1_RGBA_SRGB_BLOCK;
 			} else {
 				//not supported, reconvert
 				r_format.format = RD::DATA_FORMAT_R8G8B8A8_UNORM;
@@ -1732,7 +1732,7 @@ Ref<Image> TextureStorage::_validate_texture_format(const Ref<Image> &p_image, T
 			r_format.swizzle_r = RD::TEXTURE_SWIZZLE_R;
 			r_format.swizzle_g = RD::TEXTURE_SWIZZLE_G;
 			r_format.swizzle_b = RD::TEXTURE_SWIZZLE_B;
-			r_format.swizzle_a = RD::TEXTURE_SWIZZLE_ONE;
+			r_format.swizzle_a = RD::TEXTURE_SWIZZLE_A;
 
 		} break; //s3tc bc1
 		case Image::FORMAT_DXT3: {
