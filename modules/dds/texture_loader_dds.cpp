@@ -46,6 +46,14 @@ enum {
 	DDPF_ALPHAPIXELS = 0x00000001,
 	DDPF_INDEXED = 0x00000020,
 	DDPF_RGB = 0x00000040,
+
+	DDSCAPS2_CUBEMAP = 0x200,
+	DDSCAPS2_CUBEMAP_POSITIVEX = 0x400,
+	DDSCAPS2_CUBEMAP_NEGATIVEX = 0x800,
+	DDSCAPS2_CUBEMAP_POSITIVEY = 0x1000,
+	DDSCAPS2_CUBEMAP_NEGATIVEY = 0x2000,
+	DDSCAPS2_CUBEMAP_POSITIVEZ = 0x4000,
+	DDSCAPS2_CUBEMAP_NEGATIVEZ = 0x8000,
 };
 
 enum DDSFormat {
@@ -144,7 +152,7 @@ Ref<Resource> ResourceFormatDDS::load(const String &p_path, const String &p_orig
 	uint32_t format_alpha_mask = f->get_32();
 
 	/* uint32_t caps_1 = */ f->get_32();
-	/* uint32_t caps_2 = */ f->get_32();
+	uint32_t caps_2 = f->get_32();
 	/* uint32_t caps_ddsx = */ f->get_32();
 
 	//reserved skip
@@ -211,6 +219,66 @@ Ref<Resource> ResourceFormatDDS::load(const String &p_path, const String &p_orig
 		mipmaps = 1;
 	}
 
+	bool isCubemap = (caps_2 & DDSCAPS2_CUBEMAP) != 0;
+	if(isCubemap) {
+		uint32_t all_faces =
+			DDSCAPS2_CUBEMAP_POSITIVEX |
+			DDSCAPS2_CUBEMAP_NEGATIVEX |
+			DDSCAPS2_CUBEMAP_POSITIVEY |
+			DDSCAPS2_CUBEMAP_NEGATIVEY |
+			DDSCAPS2_CUBEMAP_POSITIVEZ |
+			DDSCAPS2_CUBEMAP_NEGATIVEZ;
+		if((caps_2 & all_faces) != all_faces) {
+			ERR_FAIL_V_MSG(Ref<Resource>(), "Unsupported partial cubemap in DDS '" + p_path + "'.");
+		}
+	}
+
+	Ref<Texture> texture;
+	if(isCubemap) {
+		Vector<Ref<Image>> layers;
+
+		for(unsigned int face = 0; face < 6; face++) {
+			Ref<Image> image = getImageFromDDS(f, dds_format, width, height, mipmaps, pitch, flags, format_rgb_bits);
+			if(!image.is_valid())
+				return Ref<Resource>();
+
+			layers.push_back(image);
+		}
+
+		Ref<Cubemap> cubemap;
+		cubemap.instantiate();
+
+		Error result = cubemap->create_from_images(layers);
+		if(result != OK) {
+			ERR_FAIL_V_MSG(Ref<Resource>(), "Unable to construct the cubemap from DDS '" + p_path + "'.");
+		}
+
+		texture = cubemap;
+	} else {
+		Ref<Image> image = getImageFromDDS(f, dds_format, width, height, mipmaps, pitch, flags, format_rgb_bits);
+		if(!image.is_valid())
+			return Ref<Resource>();
+
+		texture = ImageTexture::create_from_image(image);
+	}
+
+	if (r_error) {
+		*r_error = OK;
+	}
+
+	return texture;
+}
+
+Ref<Image> ResourceFormatDDS::getImageFromDDS(
+	const Ref<FileAccess> &f,
+	uint32_t dds_format,
+	uint32_t width,
+	uint32_t height,
+	uint32_t mipmaps,
+	uint32_t pitch,
+	uint32_t flags,
+	uint32_t format_rgb_bits) const {
+
 	Vector<uint8_t> src_data;
 
 	const DDSFormatInfo &info = dds_format_info[dds_format];
@@ -221,8 +289,8 @@ Ref<Resource> ResourceFormatDDS::load(const String &p_path, const String &p_orig
 		//compressed bc
 
 		uint32_t size = MAX(info.divisor, w) / info.divisor * MAX(info.divisor, h) / info.divisor * info.block_size;
-		ERR_FAIL_COND_V(size != pitch, Ref<Resource>());
-		ERR_FAIL_COND_V(!(flags & DDSD_LINEARSIZE), Ref<Resource>());
+		ERR_FAIL_COND_V(size != pitch, Ref<Image>());
+		ERR_FAIL_COND_V(!(flags & DDSD_LINEARSIZE), Ref<Image>());
 
 		for (uint32_t i = 1; i < mipmaps; i++) {
 			w = MAX(1u, w >> 1);
@@ -409,13 +477,7 @@ Ref<Resource> ResourceFormatDDS::load(const String &p_path, const String &p_orig
 	}
 
 	Ref<Image> img = memnew(Image(width, height, mipmaps - 1, info.format, src_data));
-	Ref<ImageTexture> texture = ImageTexture::create_from_image(img);
-
-	if (r_error) {
-		*r_error = OK;
-	}
-
-	return texture;
+	return img;
 }
 
 void ResourceFormatDDS::get_recognized_extensions(List<String> *p_extensions) const {
@@ -423,12 +485,46 @@ void ResourceFormatDDS::get_recognized_extensions(List<String> *p_extensions) co
 }
 
 bool ResourceFormatDDS::handles_type(const String &p_type) const {
-	return ClassDB::is_parent_class(p_type, "Texture2D");
+	return ClassDB::is_parent_class(p_type, "Texture2D") ||
+		ClassDB::is_parent_class(p_type, "Cubemap");
 }
 
 String ResourceFormatDDS::get_resource_type(const String &p_path) const {
-	if (p_path.get_extension().to_lower() == "dds") {
-		return "ImageTexture";
+	ImageProbeResult probe = probeImageType(p_path);
+
+	if(probe == ImageProbeCubemap)
+		return "Cubemap";
+	else if(probe == ImageProbeImage2D)
+		return "Image2D";
+	else {
+		return "";
 	}
-	return "";
+}
+
+ResourceFormatDDS::ImageProbeResult ResourceFormatDDS::probeImageType(const String &p_path) const {
+	if (p_path.get_extension().to_lower() != "dds") {
+		return ImageProbeInvalid;
+	}
+
+	Error err;
+	Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::READ, &err);
+	if (f.is_null() || err != OK) {
+		return ImageProbeInvalid;
+	}
+
+	uint32_t magic = f->get_32();
+	uint32_t hsize = f->get_32();
+
+	if (magic != DDS_MAGIC || hsize != 124) {
+		return ImageProbeInvalid;
+	}
+
+	f->seek(108);
+
+	auto caps2 = f->get_32();
+
+	if(caps2 & DDSCAPS2_CUBEMAP)
+		return ImageProbeCubemap;
+	else
+		return ImageProbeImage2D;
 }

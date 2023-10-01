@@ -41,6 +41,24 @@ public:
 	virtual String get_resource_type(const String &p_path) const;
 
 	virtual ~ResourceFormatDDS() {}
+
+private:
+	enum ImageProbeResult {
+		ImageProbeInvalid,
+		ImageProbeImage2D,
+		ImageProbeCubemap
+	};
+
+	ImageProbeResult probeImageType(const String &p_path) const;
+	Ref<Image> getImageFromDDS(
+		const Ref<FileAccess> &f,
+		uint32_t dds_format,
+		uint32_t w,
+		uint32_t h,
+		uint32_t mipmaps,
+		uint32_t pitch,
+		uint32_t flags,
+		uint32_t format_rgb_bits) const;
 };
 
 #endif // TEXTURE_LOADER_DDS_H
