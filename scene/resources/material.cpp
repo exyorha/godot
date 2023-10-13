@@ -408,6 +408,14 @@ Ref<Shader> ShaderMaterial::get_shader() const {
 	return shader;
 }
 
+void ShaderMaterial::set_voxelgi_placeholder(const Ref<BaseMaterial3D> &placeholder) {
+	voxelgi_placeholder = placeholder;
+}
+
+Ref<BaseMaterial3D> ShaderMaterial::get_voxelgi_placeholder() const {
+	return voxelgi_placeholder;
+}
+
 void ShaderMaterial::set_shader_parameter(const StringName &p_param, const Variant &p_value) {
 	if (p_value.get_type() == Variant::NIL) {
 		param_cache.erase(p_param);
@@ -453,8 +461,11 @@ void ShaderMaterial::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_shader"), &ShaderMaterial::get_shader);
 	ClassDB::bind_method(D_METHOD("set_shader_parameter", "param", "value"), &ShaderMaterial::set_shader_parameter);
 	ClassDB::bind_method(D_METHOD("get_shader_parameter", "param"), &ShaderMaterial::get_shader_parameter);
+	ClassDB::bind_method(D_METHOD("set_voxelgi_placeholder", "placeholder"), &ShaderMaterial::set_voxelgi_placeholder);
+	ClassDB::bind_method(D_METHOD("get_voxelgi_placeholder"), &ShaderMaterial::get_voxelgi_placeholder);
 
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "shader", PROPERTY_HINT_RESOURCE_TYPE, "Shader"), "set_shader", "get_shader");
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "voxelgi_placeholder", PROPERTY_HINT_RESOURCE_TYPE, "BaseMaterial3D"), "set_voxelgi_placeholder", "get_voxelgi_placeholder");
 }
 
 void ShaderMaterial::get_argument_options(const StringName &p_function, int p_idx, List<String> *r_options) const {
