@@ -325,6 +325,13 @@ Vector<Color> Voxelizer::_get_bake_texture(Ref<Image> p_image, const Color &p_co
 }
 
 Voxelizer::MaterialCache Voxelizer::_get_material_cache(Ref<Material> p_material) {
+	{
+		Ref<ShaderMaterial> shaderMateral = p_material;
+		if(shaderMateral.is_valid()) {
+			p_material = shaderMateral->get_voxelgi_placeholder();
+		}
+	}
+
 	// This way of obtaining materials is inaccurate and also does not support some compressed formats very well.
 	Ref<BaseMaterial3D> mat = p_material;
 
