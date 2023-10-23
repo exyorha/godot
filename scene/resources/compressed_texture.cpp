@@ -485,7 +485,7 @@ void ResourceFormatLoaderCompressedTexture2D::get_recognized_extensions(List<Str
 }
 
 bool ResourceFormatLoaderCompressedTexture2D::handles_type(const String &p_type) const {
-	return p_type == "CompressedTexture2D";
+	return ClassDB::is_parent_class("CompressedTexture2D", p_type);
 }
 
 String ResourceFormatLoaderCompressedTexture2D::get_resource_type(const String &p_path) const {
@@ -674,7 +674,7 @@ void ResourceFormatLoaderCompressedTexture3D::get_recognized_extensions(List<Str
 }
 
 bool ResourceFormatLoaderCompressedTexture3D::handles_type(const String &p_type) const {
-	return p_type == "CompressedTexture3D";
+	return ClassDB::is_parent_class("CompressedTexture3D", p_type);
 }
 
 String ResourceFormatLoaderCompressedTexture3D::get_resource_type(const String &p_path) const {
@@ -890,7 +890,9 @@ void ResourceFormatLoaderCompressedTextureLayered::get_recognized_extensions(Lis
 }
 
 bool ResourceFormatLoaderCompressedTextureLayered::handles_type(const String &p_type) const {
-	return p_type == "CompressedTexture2DArray" || p_type == "CompressedCubemap" || p_type == "CompressedCubemapArray";
+	return ClassDB::is_parent_class("CompressedTexture2DArray", p_type) ||
+		ClassDB::is_parent_class("CompressedCubemap", p_type) ||
+		ClassDB::is_parent_class("CompressedCubemapArray", p_type);
 }
 
 String ResourceFormatLoaderCompressedTextureLayered::get_resource_type(const String &p_path) const {
