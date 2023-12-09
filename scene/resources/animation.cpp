@@ -3905,6 +3905,7 @@ void Animation::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("compress", "page_size", "fps", "split_tolerance"), &Animation::compress, DEFVAL(8192), DEFVAL(120), DEFVAL(4.0));
 
 	ClassDB::bind_method(D_METHOD("is_capture_included"), &Animation::is_capture_included);
+	ClassDB::bind_method(D_METHOD("optimize", "p_allowed_velocity_err", "p_allowed_angular_err", "precision"), &Animation::optimize, DEFVAL(0.01), DEFVAL(0.01), DEFVAL(3));
 
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "length", PROPERTY_HINT_RANGE, "0.001,99999,0.001,suffix:s"), "set_length", "get_length");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "loop_mode", PROPERTY_HINT_ENUM, "None,Linear,Ping-Pong"), "set_loop_mode", "get_loop_mode");
