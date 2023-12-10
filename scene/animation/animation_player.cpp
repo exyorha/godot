@@ -166,7 +166,9 @@ void AnimationPlayer::_process_playback_data(PlaybackData &cd, double p_delta, f
 	real_t len = cd.from->animation->get_length();
 	Animation::LoopedFlag looped_flag = Animation::LOOPED_FLAG_NONE;
 
-	switch (cd.from->animation->get_loop_mode()) {
+	Animation::LoopMode effective_loop_mode = cd.from->animation->get_effective_loop_mode(cd.loop_override);
+
+	switch (effective_loop_mode) {
 		case Animation::LOOP_NONE: {
 			if (next_pos < 0) {
 				next_pos = 0;
@@ -207,7 +209,7 @@ void AnimationPlayer::_process_playback_data(PlaybackData &cd, double p_delta, f
 
 	// End detection.
 	if (p_is_current) {
-		if (cd.from->animation->get_loop_mode() == Animation::LOOP_NONE) {
+		if (effective_loop_mode== Animation::LOOP_NONE) {
 			if (!backwards && prev_pos <= len && next_pos == len) {
 				// Playback finished.
 				end_reached = true;
@@ -238,6 +240,7 @@ void AnimationPlayer::_process_playback_data(PlaybackData &cd, double p_delta, f
 	pi.is_external_seeking = !p_started;
 	pi.looped_flag = looped_flag;
 	pi.weight = p_blend;
+	pi.loop_override = cd.loop_override;
 	make_animation_instance(cd.from->name, pi);
 }
 
@@ -362,11 +365,11 @@ void AnimationPlayer::clear_queue() {
 	playback_queue.clear();
 }
 
-void AnimationPlayer::play_backwards(const StringName &p_name, double p_custom_blend) {
-	play(p_name, p_custom_blend, -1, true);
+void AnimationPlayer::play_backwards(const StringName &p_name, double p_custom_blend, Animation::LoopModeOverride loop_override) {
+	play(p_name, p_custom_blend, -1, true, loop_override);
 }
 
-void AnimationPlayer::play(const StringName &p_name, double p_custom_blend, float p_custom_scale, bool p_from_end) {
+void AnimationPlayer::play(const StringName &p_name, double p_custom_blend, float p_custom_scale, bool p_from_end, Animation::LoopModeOverride loop_override) {
 	StringName name = p_name;
 
 	if (String(name) == "") {
@@ -422,6 +425,7 @@ void AnimationPlayer::play(const StringName &p_name, double p_custom_blend, floa
 
 	c.current.from = &animation_set[name];
 	c.current.speed_scale = p_custom_scale;
+	c.current.loop_override = loop_override;
 
 	if (!end_reached) {
 		playback_queue.clear();
@@ -472,7 +476,7 @@ void AnimationPlayer::set_current_animation(const String &p_animation) {
 		play(p_animation);
 	} else if (playback.assigned != p_animation) {
 		float speed = playback.current.speed_scale;
-		play(p_animation, -1.0, speed, signbit(speed));
+		play(p_animation, -1.0, speed, signbit(speed), playback.current.loop_override);
 	} else {
 		// Same animation, do not replay from start.
 	}
@@ -607,6 +611,7 @@ void AnimationPlayer::_stop_internal(bool p_reset, bool p_keep_state) {
 		}
 		c.current.from = nullptr;
 		c.current.speed_scale = 1;
+		c.current.loop_override = Animation::LOOP_OVERRIDE_NO_OVERRIDE;
 		emit_signal(SNAME("current_animation_changed"), "");
 	}
 	_set_process(false);
@@ -749,8 +754,9 @@ void AnimationPlayer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_default_blend_time", "sec"), &AnimationPlayer::set_default_blend_time);
 	ClassDB::bind_method(D_METHOD("get_default_blend_time"), &AnimationPlayer::get_default_blend_time);
 
-	ClassDB::bind_method(D_METHOD("play", "name", "custom_blend", "custom_speed", "from_end"), &AnimationPlayer::play, DEFVAL(""), DEFVAL(-1), DEFVAL(1.0), DEFVAL(false));
-	ClassDB::bind_method(D_METHOD("play_backwards", "name", "custom_blend"), &AnimationPlayer::play_backwards, DEFVAL(""), DEFVAL(-1));
+	ClassDB::bind_method(D_METHOD("play", "name", "custom_blend", "custom_speed", "from_end", "loop_override"), &AnimationPlayer::play, DEFVAL(""), DEFVAL(-1), DEFVAL(1.0), DEFVAL(false), DEFVAL(Animation::LOOP_OVERRIDE_NO_OVERRIDE));
+	ClassDB::bind_method(D_METHOD("play_backwards", "name", "custom_blend", "loop_override"), &AnimationPlayer::play_backwards, DEFVAL(""), DEFVAL(-1),
+						 DEFVAL(Animation::LOOP_OVERRIDE_NO_OVERRIDE));
 	ClassDB::bind_method(D_METHOD("pause"), &AnimationPlayer::pause);
 	ClassDB::bind_method(D_METHOD("stop", "keep_state"), &AnimationPlayer::stop, DEFVAL(false));
 	ClassDB::bind_method(D_METHOD("is_playing"), &AnimationPlayer::is_playing);

@@ -62,6 +62,7 @@ private:
 		AnimationData *from = nullptr;
 		double pos = 0.0;
 		float speed_scale = 1.0;
+		Animation::LoopModeOverride loop_override = Animation::LOOP_OVERRIDE_NO_OVERRIDE;
 	};
 
 	struct Blend {
@@ -155,8 +156,8 @@ public:
 	void set_default_blend_time(double p_default);
 	double get_default_blend_time() const;
 
-	void play(const StringName &p_name = StringName(), double p_custom_blend = -1, float p_custom_scale = 1.0, bool p_from_end = false);
-	void play_backwards(const StringName &p_name = StringName(), double p_custom_blend = -1);
+	void play(const StringName &p_name = StringName(), double p_custom_blend = -1, float p_custom_scale = 1.0, bool p_from_end = false, Animation::LoopModeOverride = Animation::LOOP_OVERRIDE_NO_OVERRIDE);
+	void play_backwards(const StringName &p_name = StringName(), double p_custom_blend = -1, Animation::LoopModeOverride loop_override = Animation::LOOP_OVERRIDE_NO_OVERRIDE);
 	void queue(const StringName &p_name);
 	Vector<String> get_queue();
 	void clear_queue();
