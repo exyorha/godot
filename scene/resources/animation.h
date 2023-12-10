@@ -73,6 +73,13 @@ public:
 		LOOP_PINGPONG,
 	};
 
+	enum LoopModeOverride {
+		LOOP_OVERRIDE_NO_OVERRIDE = -1,
+		LOOP_OVERRIDE_DO_NOT_LOOP = LOOP_NONE,
+		LOOP_OVERRIDE_LINEAR = LOOP_LINEAR,
+		LOOP_OVERRIDE_PINGPONG = LOOP_PINGPONG
+	};
+
 	enum LoopedFlag {
 		LOOPED_FLAG_NONE,
 		LOOPED_FLAG_END,
@@ -259,7 +266,7 @@ private:
 	_FORCE_INLINE_ Variant _cubic_interpolate_angle_in_time(const Variant &p_pre_a, const Variant &p_a, const Variant &p_b, const Variant &p_post_b, real_t p_c, real_t p_pre_a_t, real_t p_b_t, real_t p_post_b_t) const;
 
 	template <class T>
-	_FORCE_INLINE_ T _interpolate(const Vector<TKey<T>> &p_keys, double p_time, InterpolationType p_interp, bool p_loop_wrap, bool *p_ok, bool p_backward = false) const;
+	_FORCE_INLINE_ T _interpolate(const Vector<TKey<T>> &p_keys, double p_time, InterpolationType p_interp, bool p_loop_wrap, bool *p_ok, bool p_backward, LoopModeOverride loop_override) const;
 
 	template <class T>
 	_FORCE_INLINE_ void _track_get_key_indices_in_range(const Vector<T> &p_array, double from_time, double to_time, List<int> *p_indices, bool p_is_backward) const;
@@ -376,6 +383,9 @@ protected:
 	static bool inform_variant_array(int &r_min, int &r_max); // Returns true if max and min are swapped.
 
 public:
+
+	LoopMode get_effective_loop_mode(LoopModeOverride loop_override) const;
+
 	int add_track(TrackType p_type, int p_at_pos = -1);
 	void remove_track(int p_track);
 
@@ -412,23 +422,23 @@ public:
 
 	int position_track_insert_key(int p_track, double p_time, const Vector3 &p_position);
 	Error position_track_get_key(int p_track, int p_key, Vector3 *r_position) const;
-	Error try_position_track_interpolate(int p_track, double p_time, Vector3 *r_interpolation) const;
-	Vector3 position_track_interpolate(int p_track, double p_time) const;
+	Error try_position_track_interpolate(int p_track, double p_time, Vector3 *r_interpolation, LoopModeOverride loop_override = LOOP_OVERRIDE_NO_OVERRIDE) const;
+	Vector3 position_track_interpolate(int p_track, double p_time, LoopModeOverride loop_override = LOOP_OVERRIDE_NO_OVERRIDE) const;
 
 	int rotation_track_insert_key(int p_track, double p_time, const Quaternion &p_rotation);
 	Error rotation_track_get_key(int p_track, int p_key, Quaternion *r_rotation) const;
-	Error try_rotation_track_interpolate(int p_track, double p_time, Quaternion *r_interpolation) const;
-	Quaternion rotation_track_interpolate(int p_track, double p_time) const;
+	Error try_rotation_track_interpolate(int p_track, double p_time, Quaternion *r_interpolation, LoopModeOverride loop_override = LOOP_OVERRIDE_NO_OVERRIDE) const;
+	Quaternion rotation_track_interpolate(int p_track, double p_time, LoopModeOverride loop_override = LOOP_OVERRIDE_NO_OVERRIDE) const;
 
 	int scale_track_insert_key(int p_track, double p_time, const Vector3 &p_scale);
 	Error scale_track_get_key(int p_track, int p_key, Vector3 *r_scale) const;
-	Error try_scale_track_interpolate(int p_track, double p_time, Vector3 *r_interpolation) const;
-	Vector3 scale_track_interpolate(int p_track, double p_time) const;
+	Error try_scale_track_interpolate(int p_track, double p_time, Vector3 *r_interpolation, LoopModeOverride loop_override = LOOP_OVERRIDE_NO_OVERRIDE) const;
+	Vector3 scale_track_interpolate(int p_track, double p_time, LoopModeOverride loop_override = LOOP_OVERRIDE_NO_OVERRIDE) const;
 
 	int blend_shape_track_insert_key(int p_track, double p_time, float p_blend);
 	Error blend_shape_track_get_key(int p_track, int p_key, float *r_blend) const;
-	Error try_blend_shape_track_interpolate(int p_track, double p_time, float *r_blend) const;
-	float blend_shape_track_interpolate(int p_track, double p_time) const;
+	Error try_blend_shape_track_interpolate(int p_track, double p_time, float *r_blend, LoopModeOverride loop_override = LOOP_OVERRIDE_NO_OVERRIDE) const;
+	float blend_shape_track_interpolate(int p_track, double p_time, LoopModeOverride loop_override = LOOP_OVERRIDE_NO_OVERRIDE) const;
 
 	void track_set_interpolation_type(int p_track, InterpolationType p_interp);
 	InterpolationType track_get_interpolation_type(int p_track) const;
@@ -464,7 +474,7 @@ public:
 	void track_set_interpolation_loop_wrap(int p_track, bool p_enable);
 	bool track_get_interpolation_loop_wrap(int p_track) const;
 
-	Variant value_track_interpolate(int p_track, double p_time) const;
+	Variant value_track_interpolate(int p_track, double p_time, LoopModeOverride loop_override = LOOP_OVERRIDE_NO_OVERRIDE) const;
 	void value_track_set_update_mode(int p_track, UpdateMode p_mode);
 	UpdateMode value_track_get_update_mode(int p_track) const;
 
@@ -473,7 +483,7 @@ public:
 
 	void copy_track(int p_track, Ref<Animation> p_to_animation);
 
-	void track_get_key_indices_in_range(int p_track, double p_time, double p_delta, List<int> *p_indices, Animation::LoopedFlag p_looped_flag = Animation::LOOPED_FLAG_NONE) const;
+	void track_get_key_indices_in_range(int p_track, double p_time, double p_delta, List<int> *p_indices, Animation::LoopedFlag p_looped_flag = Animation::LOOPED_FLAG_NONE, Animation::LoopModeOverride loop_override = Animation::LOOP_OVERRIDE_DO_NOT_LOOP) const;
 
 	void set_length(real_t p_length);
 	real_t get_length() const;
@@ -517,5 +527,6 @@ VARIANT_ENUM_CAST(Animation::FindMode);
 VARIANT_ENUM_CAST(Animation::HandleMode);
 VARIANT_ENUM_CAST(Animation::HandleSetMode);
 #endif // TOOLS_ENABLED
+VARIANT_ENUM_CAST(Animation::LoopModeOverride);
 
 #endif // ANIMATION_H

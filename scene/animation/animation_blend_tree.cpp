@@ -41,6 +41,14 @@ StringName AnimationNodeAnimation::get_animation() const {
 	return animation;
 }
 
+void AnimationNodeAnimation::set_loop_override(Animation::LoopModeOverride p_loop_override) {
+	loop_override = p_loop_override;
+}
+
+Animation::LoopModeOverride AnimationNodeAnimation::get_loop_override() const {
+	return loop_override;
+}
+
 Vector<String> (*AnimationNodeAnimation::get_editable_animation_list)() = nullptr;
 
 void AnimationNodeAnimation::get_parameter_list(List<PropertyInfo> *r_list) const {
@@ -90,6 +98,10 @@ double AnimationNodeAnimation::_process(const AnimationMixer::PlaybackInfo p_pla
 	double p_time = p_playback_info.time;
 	bool p_seek = p_playback_info.seeked;
 	bool p_is_external_seeking = p_playback_info.is_external_seeking;
+	Animation::LoopModeOverride resolved_loop_override = loop_override;
+
+	if(resolved_loop_override == Animation::LOOP_OVERRIDE_NO_OVERRIDE)
+		resolved_loop_override = p_playback_info.loop_override;
 
 	if (p_playback_info.seeked) {
 		step = p_time - cur_time;
@@ -101,7 +113,8 @@ double AnimationNodeAnimation::_process(const AnimationMixer::PlaybackInfo p_pla
 	}
 
 	bool is_looping = false;
-	if (anim->get_loop_mode() == Animation::LOOP_PINGPONG) {
+	Animation::LoopMode effective_loop_mode = anim->get_effective_loop_mode(resolved_loop_override);
+	if (effective_loop_mode == Animation::LOOP_PINGPONG) {
 		if (!Math::is_zero_approx(anim_size)) {
 			if (prev_time >= 0 && cur_time < 0) {
 				backward = !backward;
@@ -114,7 +127,7 @@ double AnimationNodeAnimation::_process(const AnimationMixer::PlaybackInfo p_pla
 			cur_time = Math::pingpong(cur_time, anim_size);
 		}
 		is_looping = true;
-	} else if (anim->get_loop_mode() == Animation::LOOP_LINEAR) {
+	} else if (effective_loop_mode == Animation::LOOP_LINEAR) {
 		if (!Math::is_zero_approx(anim_size)) {
 			if (prev_time >= 0 && cur_time < 0) {
 				looped_flag = node_backward ? Animation::LOOPED_FLAG_END : Animation::LOOPED_FLAG_START;
@@ -174,6 +187,7 @@ double AnimationNodeAnimation::_process(const AnimationMixer::PlaybackInfo p_pla
 		}
 		pi.weight = 1.0;
 		pi.looped_flag = looped_flag;
+		pi.loop_override = resolved_loop_override;
 		blend_animation(animation, pi);
 	}
 	set_parameter(time, cur_time);
@@ -208,8 +222,12 @@ void AnimationNodeAnimation::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_play_mode", "mode"), &AnimationNodeAnimation::set_play_mode);
 	ClassDB::bind_method(D_METHOD("get_play_mode"), &AnimationNodeAnimation::get_play_mode);
 
+	ClassDB::bind_method(D_METHOD("set_loop_override", "override"), &AnimationNodeAnimation::set_loop_override);
+	ClassDB::bind_method(D_METHOD("get_loop_override"), &AnimationNodeAnimation::get_loop_override);
+
 	ADD_PROPERTY(PropertyInfo(Variant::STRING_NAME, "animation"), "set_animation", "get_animation");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "play_mode", PROPERTY_HINT_ENUM, "Forward,Backward"), "set_play_mode", "get_play_mode");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "loop_override", PROPERTY_HINT_ENUM, "As in animation:-1,Do not loop:0,Linear,Ping-Pong"), "set_loop_override", "get_loop_override");
 
 	BIND_ENUM_CONSTANT(PLAY_MODE_FORWARD);
 	BIND_ENUM_CONSTANT(PLAY_MODE_BACKWARD);

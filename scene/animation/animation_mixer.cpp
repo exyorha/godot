@@ -1119,7 +1119,7 @@ void AnimationMixer::_blend_process(double p_delta, bool p_update_only) {
 						double prev_time = time - delta;
 						if (!backward) {
 							if (prev_time < 0) {
-								switch (a->get_loop_mode()) {
+								switch (a->get_effective_loop_mode(ai.playback_info.loop_override)) {
 									case Animation::LOOP_NONE: {
 										prev_time = 0;
 									} break;
@@ -1135,7 +1135,7 @@ void AnimationMixer::_blend_process(double p_delta, bool p_update_only) {
 							}
 						} else {
 							if (prev_time > a->get_length()) {
-								switch (a->get_loop_mode()) {
+								switch (a->get_effective_loop_mode(ai.playback_info.loop_override)) {
 									case Animation::LOOP_NONE: {
 										prev_time = (double)a->get_length();
 									} break;
@@ -1153,42 +1153,42 @@ void AnimationMixer::_blend_process(double p_delta, bool p_update_only) {
 						Vector3 loc[2];
 						if (!backward) {
 							if (prev_time > time) {
-								Error err = a->try_position_track_interpolate(i, prev_time, &loc[0]);
+								Error err = a->try_position_track_interpolate(i, prev_time, &loc[0], ai.playback_info.loop_override);
 								if (err != OK) {
 									continue;
 								}
 								loc[0] = post_process_key_value(a, i, loc[0], t->object, t->bone_idx);
-								a->try_position_track_interpolate(i, (double)a->get_length(), &loc[1]);
+								a->try_position_track_interpolate(i, (double)a->get_length(), &loc[1], ai.playback_info.loop_override);
 								loc[1] = post_process_key_value(a, i, loc[1], t->object, t->bone_idx);
 								root_motion_cache.loc += (loc[1] - loc[0]) * blend;
 								prev_time = 0;
 							}
 						} else {
 							if (prev_time < time) {
-								Error err = a->try_position_track_interpolate(i, prev_time, &loc[0]);
+								Error err = a->try_position_track_interpolate(i, prev_time, &loc[0], ai.playback_info.loop_override);
 								if (err != OK) {
 									continue;
 								}
 								loc[0] = post_process_key_value(a, i, loc[0], t->object, t->bone_idx);
-								a->try_position_track_interpolate(i, 0, &loc[1]);
+								a->try_position_track_interpolate(i, 0, &loc[1], ai.playback_info.loop_override);
 								loc[1] = post_process_key_value(a, i, loc[1], t->object, t->bone_idx);
 								root_motion_cache.loc += (loc[1] - loc[0]) * blend;
 								prev_time = (double)a->get_length();
 							}
 						}
-						Error err = a->try_position_track_interpolate(i, prev_time, &loc[0]);
+						Error err = a->try_position_track_interpolate(i, prev_time, &loc[0], ai.playback_info.loop_override);
 						if (err != OK) {
 							continue;
 						}
 						loc[0] = post_process_key_value(a, i, loc[0], t->object, t->bone_idx);
-						a->try_position_track_interpolate(i, time, &loc[1]);
+						a->try_position_track_interpolate(i, time, &loc[1], ai.playback_info.loop_override);
 						loc[1] = post_process_key_value(a, i, loc[1], t->object, t->bone_idx);
 						root_motion_cache.loc += (loc[1] - loc[0]) * blend;
 						prev_time = !backward ? 0 : (double)a->get_length();
 					}
 					{
 						Vector3 loc;
-						Error err = a->try_position_track_interpolate(i, time, &loc);
+						Error err = a->try_position_track_interpolate(i, time, &loc, ai.playback_info.loop_override);
 						if (err != OK) {
 							continue;
 						}
@@ -1207,7 +1207,7 @@ void AnimationMixer::_blend_process(double p_delta, bool p_update_only) {
 						double prev_time = time - delta;
 						if (!backward) {
 							if (prev_time < 0) {
-								switch (a->get_loop_mode()) {
+								switch (a->get_effective_loop_mode(ai.playback_info.loop_override)) {
 									case Animation::LOOP_NONE: {
 										prev_time = 0;
 									} break;
@@ -1223,7 +1223,7 @@ void AnimationMixer::_blend_process(double p_delta, bool p_update_only) {
 							}
 						} else {
 							if (prev_time > a->get_length()) {
-								switch (a->get_loop_mode()) {
+								switch (a->get_effective_loop_mode(ai.playback_info.loop_override)) {
 									case Animation::LOOP_NONE: {
 										prev_time = (double)a->get_length();
 									} break;
@@ -1241,41 +1241,41 @@ void AnimationMixer::_blend_process(double p_delta, bool p_update_only) {
 						Quaternion rot[2];
 						if (!backward) {
 							if (prev_time > time) {
-								Error err = a->try_rotation_track_interpolate(i, prev_time, &rot[0]);
+								Error err = a->try_rotation_track_interpolate(i, prev_time, &rot[0], ai.playback_info.loop_override);
 								if (err != OK) {
 									continue;
 								}
 								rot[0] = post_process_key_value(a, i, rot[0], t->object, t->bone_idx);
-								a->try_rotation_track_interpolate(i, (double)a->get_length(), &rot[1]);
+								a->try_rotation_track_interpolate(i, (double)a->get_length(), &rot[1], ai.playback_info.loop_override);
 								rot[1] = post_process_key_value(a, i, rot[1], t->object, t->bone_idx);
 								root_motion_cache.rot = (root_motion_cache.rot * Quaternion().slerp(rot[0].inverse() * rot[1], blend)).normalized();
 								prev_time = 0;
 							}
 						} else {
 							if (prev_time < time) {
-								Error err = a->try_rotation_track_interpolate(i, prev_time, &rot[0]);
+								Error err = a->try_rotation_track_interpolate(i, prev_time, &rot[0], ai.playback_info.loop_override);
 								if (err != OK) {
 									continue;
 								}
 								rot[0] = post_process_key_value(a, i, rot[0], t->object, t->bone_idx);
-								a->try_rotation_track_interpolate(i, 0, &rot[1]);
+								a->try_rotation_track_interpolate(i, 0, &rot[1], ai.playback_info.loop_override);
 								root_motion_cache.rot = (root_motion_cache.rot * Quaternion().slerp(rot[0].inverse() * rot[1], blend)).normalized();
 								prev_time = (double)a->get_length();
 							}
 						}
-						Error err = a->try_rotation_track_interpolate(i, prev_time, &rot[0]);
+						Error err = a->try_rotation_track_interpolate(i, prev_time, &rot[0], ai.playback_info.loop_override);
 						if (err != OK) {
 							continue;
 						}
 						rot[0] = post_process_key_value(a, i, rot[0], t->object, t->bone_idx);
-						a->try_rotation_track_interpolate(i, time, &rot[1]);
+						a->try_rotation_track_interpolate(i, time, &rot[1], ai.playback_info.loop_override);
 						rot[1] = post_process_key_value(a, i, rot[1], t->object, t->bone_idx);
 						root_motion_cache.rot = (root_motion_cache.rot * Quaternion().slerp(rot[0].inverse() * rot[1], blend)).normalized();
 						prev_time = !backward ? 0 : (double)a->get_length();
 					}
 					{
 						Quaternion rot;
-						Error err = a->try_rotation_track_interpolate(i, time, &rot);
+						Error err = a->try_rotation_track_interpolate(i, time, &rot, ai.playback_info.loop_override);
 						if (err != OK) {
 							continue;
 						}
@@ -1294,7 +1294,7 @@ void AnimationMixer::_blend_process(double p_delta, bool p_update_only) {
 						double prev_time = time - delta;
 						if (!backward) {
 							if (prev_time < 0) {
-								switch (a->get_loop_mode()) {
+								switch (a->get_effective_loop_mode(ai.playback_info.loop_override)) {
 									case Animation::LOOP_NONE: {
 										prev_time = 0;
 									} break;
@@ -1310,7 +1310,7 @@ void AnimationMixer::_blend_process(double p_delta, bool p_update_only) {
 							}
 						} else {
 							if (prev_time > a->get_length()) {
-								switch (a->get_loop_mode()) {
+								switch (a->get_effective_loop_mode(ai.playback_info.loop_override)) {
 									case Animation::LOOP_NONE: {
 										prev_time = (double)a->get_length();
 									} break;
@@ -1328,42 +1328,42 @@ void AnimationMixer::_blend_process(double p_delta, bool p_update_only) {
 						Vector3 scale[2];
 						if (!backward) {
 							if (prev_time > time) {
-								Error err = a->try_scale_track_interpolate(i, prev_time, &scale[0]);
+								Error err = a->try_scale_track_interpolate(i, prev_time, &scale[0], ai.playback_info.loop_override);
 								if (err != OK) {
 									continue;
 								}
 								scale[0] = post_process_key_value(a, i, scale[0], t->object, t->bone_idx);
-								a->try_scale_track_interpolate(i, (double)a->get_length(), &scale[1]);
+								a->try_scale_track_interpolate(i, (double)a->get_length(), &scale[1], ai.playback_info.loop_override);
 								root_motion_cache.scale += (scale[1] - scale[0]) * blend;
 								scale[1] = post_process_key_value(a, i, scale[1], t->object, t->bone_idx);
 								prev_time = 0;
 							}
 						} else {
 							if (prev_time < time) {
-								Error err = a->try_scale_track_interpolate(i, prev_time, &scale[0]);
+								Error err = a->try_scale_track_interpolate(i, prev_time, &scale[0], ai.playback_info.loop_override);
 								if (err != OK) {
 									continue;
 								}
 								scale[0] = post_process_key_value(a, i, scale[0], t->object, t->bone_idx);
-								a->try_scale_track_interpolate(i, 0, &scale[1]);
+								a->try_scale_track_interpolate(i, 0, &scale[1], ai.playback_info.loop_override);
 								scale[1] = post_process_key_value(a, i, scale[1], t->object, t->bone_idx);
 								root_motion_cache.scale += (scale[1] - scale[0]) * blend;
 								prev_time = (double)a->get_length();
 							}
 						}
-						Error err = a->try_scale_track_interpolate(i, prev_time, &scale[0]);
+						Error err = a->try_scale_track_interpolate(i, prev_time, &scale[0], ai.playback_info.loop_override);
 						if (err != OK) {
 							continue;
 						}
 						scale[0] = post_process_key_value(a, i, scale[0], t->object, t->bone_idx);
-						a->try_scale_track_interpolate(i, time, &scale[1]);
+						a->try_scale_track_interpolate(i, time, &scale[1], ai.playback_info.loop_override);
 						scale[1] = post_process_key_value(a, i, scale[1], t->object, t->bone_idx);
 						root_motion_cache.scale += (scale[1] - scale[0]) * blend;
 						prev_time = !backward ? 0 : (double)a->get_length();
 					}
 					{
 						Vector3 scale;
-						Error err = a->try_scale_track_interpolate(i, time, &scale);
+						Error err = a->try_scale_track_interpolate(i, time, &scale, ai.playback_info.loop_override);
 						if (err != OK) {
 							continue;
 						}
@@ -1379,7 +1379,7 @@ void AnimationMixer::_blend_process(double p_delta, bool p_update_only) {
 					}
 					TrackCacheBlendShape *t = static_cast<TrackCacheBlendShape *>(track);
 					float value;
-					Error err = a->try_blend_shape_track_interpolate(i, time, &value);
+					Error err = a->try_blend_shape_track_interpolate(i, time, &value, ai.playback_info.loop_override);
 					//ERR_CONTINUE(err!=OK); //used for testing, should be removed
 					if (err != OK) {
 						continue;
@@ -1394,7 +1394,7 @@ void AnimationMixer::_blend_process(double p_delta, bool p_update_only) {
 					}
 					TrackCacheValue *t = static_cast<TrackCacheValue *>(track);
 					if (t->is_continuous) {
-						Variant value = a->value_track_interpolate(i, time);
+						Variant value = a->value_track_interpolate(i, time, ai.playback_info.loop_override);
 						value = post_process_key_value(a, i, value, t->object);
 						if (value == Variant()) {
 							continue;
@@ -1502,7 +1502,7 @@ void AnimationMixer::_blend_process(double p_delta, bool p_update_only) {
 					track_info.length = a->get_length();
 					track_info.time = time;
 					track_info.volume += blend;
-					track_info.loop = a->get_loop_mode() != Animation::LOOP_NONE;
+					track_info.loop = a->get_effective_loop_mode(ai.playback_info.loop_override) != Animation::LOOP_NONE;
 					track_info.backward = backward;
 					track_info.use_blend = a->audio_track_is_use_blend(i);
 					HashMap<int, PlayingAudioStreamInfo> &map = track_info.stream_info;
@@ -1589,7 +1589,7 @@ void AnimationMixer::_blend_process(double p_delta, bool p_update_only) {
 						}
 						Ref<Animation> anim = player2->get_animation(anim_name);
 						double at_anim_pos = 0.0;
-						switch (anim->get_loop_mode()) {
+						switch (anim->get_effective_loop_mode(ai.playback_info.loop_override)) {
 							case Animation::LOOP_NONE: {
 								at_anim_pos = MAX((double)anim->get_length(), time - pos); //seek to end
 							} break;

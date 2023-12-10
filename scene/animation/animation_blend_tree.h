@@ -41,6 +41,7 @@ class AnimationNodeAnimation : public AnimationRootNode {
 
 	uint64_t last_version = 0;
 	bool skip = false;
+	Animation::LoopModeOverride loop_override = Animation::LOOP_OVERRIDE_NO_OVERRIDE;
 
 public:
 	enum PlayMode {
@@ -63,6 +64,9 @@ public:
 
 	void set_backward(bool p_backward);
 	bool is_backward() const;
+
+	void set_loop_override(Animation::LoopModeOverride p_loop_override);
+	Animation::LoopModeOverride get_loop_override() const;
 
 	AnimationNodeAnimation();
 

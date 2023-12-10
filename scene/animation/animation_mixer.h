@@ -84,6 +84,7 @@ public:
 		Animation::LoopedFlag looped_flag = Animation::LOOPED_FLAG_NONE;
 		real_t weight = 0.0;
 		Vector<real_t> track_weights;
+		Animation::LoopModeOverride loop_override = Animation::LOOP_OVERRIDE_NO_OVERRIDE;
 	};
 
 	struct AnimationInstance {
