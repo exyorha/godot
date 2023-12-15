@@ -314,6 +314,8 @@ bool AnimationPlayer::_blend_pre_process(double p_delta, int p_track_count, cons
 }
 
 void AnimationPlayer::_blend_post_process() {
+	AnimationMixer::_blend_post_process();
+
 	if (end_reached) {
 		// If the method track changes current animation, the animation is not finished.
 		if (tmp_from == playback.current.from->animation->get_instance_id()) {

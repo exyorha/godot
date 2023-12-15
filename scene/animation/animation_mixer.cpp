@@ -1026,7 +1026,7 @@ bool AnimationMixer::_blend_pre_process(double p_delta, int p_track_count, const
 }
 
 void AnimationMixer::_blend_post_process() {
-	//
+	emit_signal(SNAME("post_blend"));
 }
 
 void AnimationMixer::_blend_calc_total_weight() {
@@ -2130,6 +2130,20 @@ void AnimationMixer::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("_reset"), &AnimationMixer::reset);
 	ClassDB::bind_method(D_METHOD("_restore", "backup"), &AnimationMixer::restore);
+
+	ClassDB::bind_method(D_METHOD("get_all_active_animations"), &AnimationMixer::get_all_active_animations);
+
+	ADD_SIGNAL(MethodInfo("post_blend"));
+}
+
+TypedArray<Animation> AnimationMixer::get_all_active_animations() const {
+	TypedArray<Animation> result;
+
+	for(const AnimationInstance &instance : animation_instances) {
+		result.push_back(instance.animation_data.animation);
+	}
+
+	return result;
 }
 
 AnimationMixer::AnimationMixer() {
