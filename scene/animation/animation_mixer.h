@@ -437,6 +437,8 @@ public:
 	bool is_dummy() const;
 #endif // TOOLS_ENABLED
 
+	TypedArray<Animation> get_all_active_animations() const;
+
 	AnimationMixer();
 	~AnimationMixer();
 };
