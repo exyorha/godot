@@ -340,9 +340,12 @@ void AudioStream::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_length"), &AudioStream::get_length);
 	ClassDB::bind_method(D_METHOD("is_monophonic"), &AudioStream::is_monophonic);
 	ClassDB::bind_method(D_METHOD("instantiate_playback"), &AudioStream::instantiate_playback);
+
 	ClassDB::bind_method(D_METHOD("can_be_sampled"), &AudioStream::can_be_sampled);
 	ClassDB::bind_method(D_METHOD("generate_sample"), &AudioStream::generate_sample);
 	ClassDB::bind_method(D_METHOD("is_meta_stream"), &AudioStream::is_meta_stream);
+
+	ClassDB::bind_method(D_METHOD("tag_used", "offset"), &AudioStream::tag_used);
 
 	GDVIRTUAL_BIND(_instantiate_playback);
 	GDVIRTUAL_BIND(_get_stream_name);
