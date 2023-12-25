@@ -253,6 +253,7 @@ void AudioStream::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_length"), &AudioStream::get_length);
 	ClassDB::bind_method(D_METHOD("is_monophonic"), &AudioStream::is_monophonic);
 	ClassDB::bind_method(D_METHOD("instantiate_playback"), &AudioStream::instantiate_playback);
+	ClassDB::bind_method(D_METHOD("tag_used", "offset"), &AudioStream::tag_used);
 	GDVIRTUAL_BIND(_instantiate_playback);
 	GDVIRTUAL_BIND(_get_stream_name);
 	GDVIRTUAL_BIND(_get_length);
