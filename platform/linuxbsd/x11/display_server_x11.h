@@ -68,6 +68,10 @@
 #include "freedesktop_screensaver.h"
 #endif
 
+#if defined(FILAMENT_ENABLED)
+#include "filament/filament_display_server_context.h"
+#endif
+
 #include <X11/Xatom.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -144,6 +148,9 @@ class DisplayServerX11 : public DisplayServer {
 #if defined(VULKAN_ENABLED)
 	VulkanContextX11 *context_vulkan = nullptr;
 	RenderingDeviceVulkan *rendering_device_vulkan = nullptr;
+#endif
+#if defined(FILAMENT_ENABLED)
+	FilamentDisplayServerContext *filament_context = nullptr;
 #endif
 
 #if defined(DBUS_ENABLED)

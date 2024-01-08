@@ -223,6 +223,7 @@ opts.Add(
 opts.Add(BoolVariable("use_precise_math_checks", "Math checks use very precise epsilon (debug option)", False))
 opts.Add(BoolVariable("scu_build", "Use single compilation unit build", False))
 opts.Add("scu_limit", "Max includes per SCU file when using scu_build (determines RAM use)", "0")
+opts.Add(BoolVariable("filament", "Include the Filament rendering server", False))
 
 # Thirdparty libraries
 opts.Add(BoolVariable("builtin_brotli", "Use the built-in Brotli library", True))
@@ -465,6 +466,9 @@ if not env_base["deprecated"]:
 
 if env_base["precision"] == "double":
     env_base.Append(CPPDEFINES=["REAL_T_IS_DOUBLE"])
+
+if env_base["filament"]:
+    env_base.Append(CPPDEFINES=["FILAMENT_ENABLED"])
 
 if selected_platform in platform_list:
     tmppath = "./platform/" + selected_platform
@@ -979,6 +983,9 @@ if selected_platform in platform_list:
     SConscript("main/SCsub")
 
     SConscript("platform/" + selected_platform + "/SCsub")  # Build selected platform.
+
+    if env["filament"]:
+        SConscript("filament/SCsub")
 
     # Microsoft Visual Studio Project Generation
     if env["vsproj"]:

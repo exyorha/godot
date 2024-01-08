@@ -1,0 +1,101 @@
+#!/usr/bin/env python
+
+import subprocess
+
+filament_version = "1.49.2"
+
+Import("env")
+
+filament_srcdir = "filament-%s" % filament_version
+
+filament_builddir = "filament-%s" % env["platform"]
+
+print("Godot-Filament integration build setup:")
+print("  Source directory: %s" % filament_srcdir)
+print("  Build directory:  %s" % filament_builddir)
+
+# cmake -S {filament_srcdir} -B {filament_builddir} -DFILAMENT_SKIP_SAMPLES=ON
+
+if env["dev_build"]:
+    filament_build_type = "RelWithDebInfo"
+else:
+    filament_build_type = "Release"
+
+res = subprocess.run([
+    "cmake",
+    "-DCMAKE_C_COMPILER=%s" % env["CC"],
+    "-DCMAKE_CXX_COMPILER=%s" % env["CXX"],
+    "-DCMAKE_BUILD_TYPE=%s" % filament_build_type,
+    "-DCMAKE_EXPORT_COMPILE_COMMANDS=TRUE",
+    "-DFILAMENT_SKIP_SAMPLES=TRUE",
+    "-DFILAMENT_SKIP_SDL2=TRUE",
+    "-S", filament_srcdir,
+    "-B", filament_builddir
+])
+res.check_returncode()
+
+buildcmd = [
+    "cmake", "--build", filament_builddir,
+    "--parallel=%d" % env.GetOption("num_jobs")
+]
+
+if env["verbose"]:
+    buildcmd.append("--verbose")
+
+res = subprocess.run(buildcmd)
+
+res.check_returncode()
+
+sources = [
+    "filament_display_server_context.cpp",
+    "filament_renderer_canvas_render.cpp",
+    "filament_renderer_compositor.cpp",
+    "filament_renderer_fog.cpp",
+    "filament_renderer_gi.cpp",
+    "filament_renderer_light_storage.cpp",
+    "filament_renderer_material_storage.cpp",
+    "filament_renderer_mesh_storage.cpp",
+    "filament_renderer_particles_storage.cpp",
+    "filament_renderer_scene_render.cpp",
+    "filament_renderer_texture_storage.cpp",
+    "filament_renderer_utilities.cpp"
+]
+
+env_filament = env.Clone()
+
+env_filament.Prepend(CPPPATH=[
+    "%s/filament/backend/include" % filament_srcdir,
+    "%s/filament/include" % filament_srcdir,
+    "%s/libs/utils/include" % filament_srcdir,
+    "%s/libs/math/include" % filament_srcdir
+])
+
+lib = env_filament.add_library("filamentserver", sources)
+
+env.Prepend(
+    LIBPATH = [
+        "#filament/%s/filament" % filament_builddir,
+        "#filament/%s/filament/backend" % filament_builddir,
+        "#filament/%s/libs/utils" % filament_builddir,
+        "#filament/%s/libs/bluegl" % filament_builddir,
+        "#filament/%s/libs/bluevk" % filament_builddir,
+        "#filament/%s/libs/filaflat" % filament_builddir,
+        "#filament/%s/libs/filabridge" % filament_builddir,
+        "#filament/%s/libs/ibl" % filament_builddir,
+        "#filament/%s/third_party/smol-v/tnt" % filament_builddir
+    ],
+    LIBS = [
+        lib,
+        "filament",
+        "backend",
+        "vkshaders",
+        "utils",
+        "bluegl",
+        "bluevk",
+        "filaflat",
+        "filabridge",
+        "ibl",
+        "smol-v",
+        "c++"
+    ]
+)

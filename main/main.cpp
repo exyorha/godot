@@ -1796,10 +1796,21 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 		GLOBAL_DEF_RST_NOVAL(PropertyInfo(Variant::ARRAY, "rendering/gl_compatibility/force_angle_on_devices", PROPERTY_HINT_ARRAY_TYPE, vformat("%s/%s:%s", Variant::DICTIONARY, PROPERTY_HINT_NONE, String())), device_blocklist);
 	}
 
+
+#ifdef FILAMENT_ENABLED
+	// Filament, if present, is always preferred
+	renderer_hints = "filament";
+	default_renderer_mobile = "filament";
+#endif
+
 	// Start with RenderingDevice-based backends. Should be included if any RD driver present.
 #ifdef VULKAN_ENABLED
-	renderer_hints = "forward_plus,mobile";
-	default_renderer_mobile = "mobile";
+	if(!renderer_hints.is_empty())
+		renderer_hints += ",";
+	renderer_hints += "forward_plus,mobile";
+	if(default_renderer_mobile.is_empty()) {
+		default_renderer_mobile = "mobile";
+	}
 #endif
 
 	// And Compatibility next, or first if Vulkan is disabled.
@@ -1811,12 +1822,14 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 	if (default_renderer_mobile.is_empty()) {
 		default_renderer_mobile = "gl_compatibility";
 	}
+#ifndef FILAMENT_ENABLED
 	// Default to Compatibility when using the project manager.
 	if (rendering_driver.is_empty() && rendering_method.is_empty() && project_manager) {
 		rendering_driver = "opengl3";
 		rendering_method = "gl_compatibility";
 		default_renderer_mobile = "gl_compatibility";
 	}
+#endif
 #endif
 	if (renderer_hints.is_empty()) {
 		ERR_PRINT("No renderers available.");
@@ -1825,7 +1838,8 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 	if (!rendering_method.is_empty()) {
 		if (rendering_method != "forward_plus" &&
 				rendering_method != "mobile" &&
-				rendering_method != "gl_compatibility") {
+				rendering_method != "gl_compatibility" &&
+				rendering_method != "filament") {
 			OS::get_singleton()->print("Unknown renderer name '%s', aborting. Valid options are: %s\n", rendering_method.utf8().get_data(), renderer_hints.utf8().get_data());
 			goto error;
 		}
@@ -1867,7 +1881,9 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 
 		// Set a default renderer if none selected. Try to choose one that matches the driver.
 		if (rendering_method.is_empty()) {
-			if (rendering_driver == "opengl3" || rendering_driver == "opengl3_angle" || rendering_driver == "opengl3_es") {
+			if (rendering_driver == "filament") {
+				rendering_method = "filament";
+			} else if (rendering_driver == "opengl3" || rendering_driver == "opengl3_angle" || rendering_driver == "opengl3_es") {
 				rendering_method = "gl_compatibility";
 			} else {
 				rendering_method = "forward_plus";
@@ -1877,6 +1893,11 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 		// Now validate whether the selected driver matches with the renderer.
 		bool valid_combination = false;
 		Vector<String> available_drivers;
+#ifdef FILAMENT_ENABLED
+		if (rendering_method == "filament") {
+			available_drivers.push_back("filament");
+		}
+#endif
 #ifdef VULKAN_ENABLED
 		if (rendering_method == "forward_plus" || rendering_method == "mobile") {
 			available_drivers.push_back("vulkan");
@@ -1922,6 +1943,10 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 	// Default to ProjectSettings default if nothing set on the command line.
 	if (rendering_method.is_empty()) {
 		rendering_method = GLOBAL_GET("rendering/renderer/rendering_method");
+	}
+
+	if(rendering_method == "filament") {
+		rendering_driver = "filament";
 	}
 
 	if (rendering_driver.is_empty()) {

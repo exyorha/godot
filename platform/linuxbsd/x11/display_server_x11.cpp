@@ -5288,6 +5288,9 @@ Vector<String> DisplayServerX11::get_rendering_drivers_func() {
 	drivers.push_back("opengl3");
 	drivers.push_back("opengl3_es");
 #endif
+#ifdef FILAMENT_ENABLED
+	drivers.push_back("filament");
+#endif
 
 	return drivers;
 }
@@ -6008,6 +6011,18 @@ DisplayServerX11::DisplayServerX11(const String &p_rendering_driver, WindowMode 
 	rendering_driver = p_rendering_driver;
 
 	bool driver_found = false;
+#if defined(FILAMENT_ENABLED)
+	if (rendering_driver == "filament") {
+		filament_context = memnew(FilamentDisplayServerContext);
+		if(filament_context->initialize() != OK) {
+			memdelete(filament_context);
+			filament_context = nullptr;
+			r_error = ERR_CANT_CREATE;
+			ERR_FAIL_MSG("Could not initialize Filament");
+		}
+		driver_found = true;
+	}
+#endif
 #if defined(VULKAN_ENABLED)
 	if (rendering_driver == "vulkan") {
 		context_vulkan = memnew(VulkanContextX11);
@@ -6366,6 +6381,13 @@ DisplayServerX11::~DisplayServerX11() {
 	if (gl_manager_egl) {
 		memdelete(gl_manager_egl);
 		gl_manager_egl = nullptr;
+	}
+#endif
+
+#ifdef FILAMENT_ENABLED
+	if(filament_context) {
+		memdelete(filament_context);
+		filament_context = nullptr;
 	}
 #endif
 
