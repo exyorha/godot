@@ -230,7 +230,7 @@ protected:
 				case RS::GLOBAL_VAR_TYPE_SAMPLERCUBE: {
 					pinfo.type = Variant::OBJECT;
 					pinfo.hint = PROPERTY_HINT_RESOURCE_TYPE;
-					pinfo.hint_string = "Cubemap";
+					pinfo.hint_string = "TextureLayered";
 				} break;
 				default: {
 				} break;
