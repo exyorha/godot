@@ -120,6 +120,10 @@
 #endif // TOOLS_ENABLED && !GDSCRIPT_NO_LSP
 #endif // MODULE_GDSCRIPT_ENABLED
 
+#ifdef FILAMENT_ENABLED
+#include "filament/filament_rendering_server.h"
+#endif
+
 /* Static members */
 
 // Singletons
@@ -2476,7 +2480,16 @@ Error Main::setup2() {
 
 	/* Initialize Rendering Server */
 
-	rendering_server = memnew(RenderingServerDefault(OS::get_singleton()->get_render_thread_mode() == OS::RENDER_SEPARATE_THREAD));
+#ifdef FILAMENT_ENABLED
+	FilamentRenderingServer *filamentServer = FilamentRenderingServer::filament_server_instance();
+	if(filamentServer) {
+		rendering_server = filamentServer;
+	}
+#endif
+
+	if(!rendering_server) {
+		rendering_server = memnew(RenderingServerDefault(OS::get_singleton()->get_render_thread_mode() == OS::RENDER_SEPARATE_THREAD));
+	}
 
 	rendering_server->init();
 	//rendering_server->call_set_use_vsync(OS::get_singleton()->_use_vsync);

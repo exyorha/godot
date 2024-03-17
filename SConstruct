@@ -980,12 +980,13 @@ if selected_platform in platform_list:
     SConscript("modules/SCsub")
     if env["tests"]:
         SConscript("tests/SCsub")
-    SConscript("main/SCsub")
-
-    SConscript("platform/" + selected_platform + "/SCsub")  # Build selected platform.
 
     if env["filament"]:
         SConscript("filament/SCsub")
+
+    SConscript("main/SCsub")
+
+    SConscript("platform/" + selected_platform + "/SCsub")  # Build selected platform.
 
     # Microsoft Visual Studio Project Generation
     if env["vsproj"]:

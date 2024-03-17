@@ -51,6 +51,10 @@
 #include "drivers/gles3/rasterizer_gles3.h"
 #endif
 
+#if defined(FILAMENT_ENABLED)
+#include "filament/filament_rendering_server.h"
+#endif
+
 #include <dlfcn.h>
 #include <limits.h>
 #include <stdio.h>
@@ -1719,6 +1723,11 @@ void DisplayServerX11::delete_sub_window(WindowID p_id) {
 	if (gl_manager_egl) {
 		gl_manager_egl->window_destroy(p_id);
 	}
+#endif
+#ifdef FILAMENT_ENABLED
+		if(filament_server) {
+			filament_server->window_destroy(p_id);
+		}
 #endif
 
 	if (wd.xic) {
@@ -5624,8 +5633,14 @@ DisplayServerX11::WindowID DisplayServerX11::_create_window(WindowMode p_mode, V
 			Error err = gl_manager_egl->window_create(id, x11_display, &wd.x11_window, win_rect.size.width, win_rect.size.height);
 			ERR_FAIL_COND_V_MSG(err != OK, INVALID_WINDOW_ID, "Failed to create an OpenGLES window.");
 		}
-		window_set_vsync_mode(p_vsync_mode, id);
 #endif
+#ifdef FILAMENT_ENABLED
+		if(filament_server) {
+			Error err = filament_server->window_create(id, reinterpret_cast<void *>(wd.x11_window));
+			ERR_FAIL_COND_V_MSG(err != OK, INVALID_WINDOW_ID, "Failed to create a Filament window.");
+		}
+#endif
+		window_set_vsync_mode(p_vsync_mode, id);
 
 		//set_class_hint(x11_display, wd.x11_window);
 		XFlush(x11_display);
@@ -6013,10 +6028,10 @@ DisplayServerX11::DisplayServerX11(const String &p_rendering_driver, WindowMode 
 	bool driver_found = false;
 #if defined(FILAMENT_ENABLED)
 	if (rendering_driver == "filament") {
-		filament_context = memnew(FilamentDisplayServerContext);
-		if(filament_context->initialize() != OK) {
-			memdelete(filament_context);
-			filament_context = nullptr;
+		filament_server = memnew(FilamentRenderingServer);
+		if(filament_server->display_server_initialize() != OK) {
+			memdelete(filament_server);
+			filament_server = nullptr;
 			r_error = ERR_CANT_CREATE;
 			ERR_FAIL_MSG("Could not initialize Filament");
 		}
@@ -6329,6 +6344,11 @@ DisplayServerX11::~DisplayServerX11() {
 			gl_manager_egl->window_destroy(E.key);
 		}
 #endif
+#ifdef FILAMENT_ENABLED
+		if(filament_server) {
+			filament_server->window_destroy(E.key);
+		}
+#endif
 
 		WindowData &wd = E.value;
 		if (wd.xic) {
@@ -6385,9 +6405,9 @@ DisplayServerX11::~DisplayServerX11() {
 #endif
 
 #ifdef FILAMENT_ENABLED
-	if(filament_context) {
-		memdelete(filament_context);
-		filament_context = nullptr;
+	if(filament_server) {
+		memdelete(filament_server);
+		filament_server = nullptr;
 	}
 #endif
 

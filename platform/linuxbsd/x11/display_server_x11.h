@@ -68,10 +68,6 @@
 #include "freedesktop_screensaver.h"
 #endif
 
-#if defined(FILAMENT_ENABLED)
-#include "filament/filament_display_server_context.h"
-#endif
-
 #include <X11/Xatom.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -124,6 +120,8 @@ typedef struct _xrr_monitor_info {
 
 #undef CursorShape
 
+class FilamentRenderingServer;
+
 class DisplayServerX11 : public DisplayServer {
 	// No need to register with GDCLASS, it's platform-specific and nothing is added.
 
@@ -150,7 +148,7 @@ class DisplayServerX11 : public DisplayServer {
 	RenderingDeviceVulkan *rendering_device_vulkan = nullptr;
 #endif
 #if defined(FILAMENT_ENABLED)
-	FilamentDisplayServerContext *filament_context = nullptr;
+	FilamentRenderingServer *filament_server = nullptr;
 #endif
 
 #if defined(DBUS_ENABLED)

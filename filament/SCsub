@@ -2,7 +2,7 @@
 
 import subprocess
 
-filament_version = "1.49.2"
+filament_version = "1.50.2"
 
 Import("env")
 
@@ -13,8 +13,6 @@ filament_builddir = "filament-%s" % env["platform"]
 print("Godot-Filament integration build setup:")
 print("  Source directory: %s" % filament_srcdir)
 print("  Build directory:  %s" % filament_builddir)
-
-# cmake -S {filament_srcdir} -B {filament_builddir} -DFILAMENT_SKIP_SAMPLES=ON
 
 if env["dev_build"]:
     filament_build_type = "RelWithDebInfo"
@@ -47,27 +45,22 @@ res = subprocess.run(buildcmd)
 res.check_returncode()
 
 sources = [
-    "filament_display_server_context.cpp",
-    "filament_renderer_canvas_render.cpp",
-    "filament_renderer_compositor.cpp",
-    "filament_renderer_fog.cpp",
-    "filament_renderer_gi.cpp",
-    "filament_renderer_light_storage.cpp",
-    "filament_renderer_material_storage.cpp",
-    "filament_renderer_mesh_storage.cpp",
-    "filament_renderer_particles_storage.cpp",
-    "filament_renderer_scene_render.cpp",
-    "filament_renderer_texture_storage.cpp",
-    "filament_renderer_utilities.cpp"
+    "filament_engine_object.cpp",
+    "filament_rendering_server.cpp",
+    "filament_rendering_server.h",
+    "filament_rendering_server_backend.cpp",
+    "filament_rendering_server_backend.h",
+    "filament_window.cpp",
+    "threaded_execution_queue.cpp"
 ]
 
 env_filament = env.Clone()
 
 env_filament.Prepend(CPPPATH=[
-    "%s/filament/backend/include" % filament_srcdir,
-    "%s/filament/include" % filament_srcdir,
-    "%s/libs/utils/include" % filament_srcdir,
-    "%s/libs/math/include" % filament_srcdir
+    "#filament/%s/filament/backend/include" % filament_srcdir,
+    "#filament/%s/filament/include" % filament_srcdir,
+    "#filament/%s/libs/utils/include" % filament_srcdir,
+    "#filament/%s/libs/math/include" % filament_srcdir
 ])
 
 lib = env_filament.add_library("filamentserver", sources)

@@ -1,1 +1,1 @@
-scons vulkan=false opengl3=false filament=true profile=/home/reki/nierdot/deployment/godot-custom.py CC=clang CXX=clang++ use_static_cpp=no dev_build=true compiledb=true
+scons vulkan=false opengl3=false filament=true profile=/home/reki/nierdot/deployment/godot-custom.py CC=clang CXX=clang++ use_static_cpp=no dev_build=true compiledb=true disable_exceptions=false
