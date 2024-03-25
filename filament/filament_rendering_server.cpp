@@ -1,5 +1,5 @@
-
 #include "filament_rendering_server.h"
+#include "filament_object_manager.h"
 
 FilamentRenderingServer *FilamentRenderingServer::Registerer::m_instance = nullptr;
 
@@ -17,24 +17,37 @@ FilamentRenderingServer::Registerer::~Registerer() {
 	m_instance = nullptr;
 }
 
-filament::Engine *FilamentRenderingServer::filamentEngine() {
-	return filament_server_instance()->backend()->filamentEngine();
-}
-
 RID FilamentRenderingServer::texture_2d_create(const Ref<Image> & p_image)  {
-	return execute<RID, const Ref<Image> &>(&FilamentRenderingServerBackend::texture_2d_create, p_image);
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID, const Ref<Image> &>(&FilamentRenderingServerBackend::texture_2d_create, output, p_image);
+
+	return output;
 };
 
 RID FilamentRenderingServer::texture_2d_layered_create(const Vector<Ref<Image>> & p_layers, TextureLayeredType p_layered_type)  {
-	return execute<RID, const Vector<Ref<Image>> &, TextureLayeredType>(&FilamentRenderingServerBackend::texture_2d_layered_create, p_layers, p_layered_type);
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID, const Vector<Ref<Image>> &, TextureLayeredType>(&FilamentRenderingServerBackend::texture_2d_layered_create, output, p_layers, p_layered_type);
+
+	return output;
 };
 
 RID FilamentRenderingServer::texture_3d_create(Image::Format anonarg, int p_width, int p_height, int p_depth, bool p_mipmaps, const Vector<Ref<Image>> & p_data)  {
-	return execute<RID, Image::Format, int, int, int, bool, const Vector<Ref<Image>> &>(&FilamentRenderingServerBackend::texture_3d_create, anonarg, p_width, p_height, p_depth, p_mipmaps, p_data);
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID, Image::Format, int, int, int, bool, const Vector<Ref<Image>> &>(&FilamentRenderingServerBackend::texture_3d_create, output,
+																							  anonarg, p_width, p_height, p_depth, p_mipmaps, p_data);
+
+	return output;
 };
 
 RID FilamentRenderingServer::texture_proxy_create(RID p_base)  {
-	return execute<RID, RID>(&FilamentRenderingServerBackend::texture_proxy_create, p_base);
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID, RID>(&FilamentRenderingServerBackend::texture_proxy_create, output, p_base);
+
+	return output;
 };
 
 void FilamentRenderingServer::texture_2d_update(RID p_texture, const Ref<Image> & p_image, int p_layer)  {
@@ -50,15 +63,27 @@ void FilamentRenderingServer::texture_proxy_update(RID p_texture, RID p_proxy_to
 };
 
 RID FilamentRenderingServer::texture_2d_placeholder_create()  {
-	return execute<RID>(&FilamentRenderingServerBackend::texture_2d_placeholder_create);
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID>(&FilamentRenderingServerBackend::texture_2d_placeholder_create, output);
+
+	return output;
 };
 
 RID FilamentRenderingServer::texture_2d_layered_placeholder_create(TextureLayeredType p_layered_type)  {
-	return execute<RID, TextureLayeredType>(&FilamentRenderingServerBackend::texture_2d_layered_placeholder_create, p_layered_type);
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID, TextureLayeredType>(&FilamentRenderingServerBackend::texture_2d_layered_placeholder_create, output, p_layered_type);
+
+	return output;
 };
 
 RID FilamentRenderingServer::texture_3d_placeholder_create()  {
-	return execute<RID>(&FilamentRenderingServerBackend::texture_3d_placeholder_create);
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID>(&FilamentRenderingServerBackend::texture_3d_placeholder_create, output);
+
+	return output;
 };
 
 Ref<Image> FilamentRenderingServer::texture_2d_get(RID p_texture) const {
@@ -114,7 +139,11 @@ void FilamentRenderingServer::texture_set_force_redraw_if_visible(RID p_texture,
 };
 
 RID FilamentRenderingServer::texture_rd_create(const RID & p_rd_texture, const RenderingServer::TextureLayeredType p_layer_type)  {
-	return execute<RID, const RID &, const RenderingServer::TextureLayeredType>(&FilamentRenderingServerBackend::texture_rd_create, p_rd_texture, p_layer_type);
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID, const RID &, const RenderingServer::TextureLayeredType>(&FilamentRenderingServerBackend::texture_rd_create, p_rd_texture, output, p_layer_type);
+
+	return output;
 };
 
 RID FilamentRenderingServer::texture_get_rd_texture(RID p_texture, bool p_srgb) const {
@@ -126,7 +155,11 @@ uint64_t FilamentRenderingServer::texture_get_native_handle(RID p_texture, bool 
 };
 
 RID FilamentRenderingServer::shader_create()  {
-	return execute<RID>(&FilamentRenderingServerBackend::shader_create);
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID>(&FilamentRenderingServerBackend::shader_create, output);
+
+	return output;
 };
 
 void FilamentRenderingServer::shader_set_code(RID p_shader, const String & p_code)  {
@@ -162,7 +195,11 @@ RenderingServer::ShaderNativeSourceCode FilamentRenderingServer::shader_get_nati
 };
 
 RID FilamentRenderingServer::material_create()  {
-	return execute<RID>(&FilamentRenderingServerBackend::material_create);
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID>(&FilamentRenderingServerBackend::material_create, output);
+
+	return output;
 };
 
 void FilamentRenderingServer::material_set_shader(RID p_shader_material, RID p_shader)  {
@@ -186,11 +223,19 @@ void FilamentRenderingServer::material_set_next_pass(RID p_material, RID p_next_
 };
 
 RID FilamentRenderingServer::mesh_create_from_surfaces(const Vector<SurfaceData> & p_surfaces, int p_blend_shape_count)  {
-	return execute<RID, const Vector<SurfaceData> &, int>(&FilamentRenderingServerBackend::mesh_create_from_surfaces, p_surfaces, p_blend_shape_count);
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID, const Vector<SurfaceData> &, int>(&FilamentRenderingServerBackend::mesh_create_from_surfaces, output, p_surfaces, p_blend_shape_count);
+
+	return output;
 };
 
 RID FilamentRenderingServer::mesh_create()  {
-	return execute<RID>(&FilamentRenderingServerBackend::mesh_create);
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID>(&FilamentRenderingServerBackend::mesh_create, output);
+
+	return output;
 };
 
 void FilamentRenderingServer::mesh_set_blend_shape_count(RID p_mesh, int p_blend_shape_count)  {
@@ -258,7 +303,11 @@ void FilamentRenderingServer::mesh_clear(RID p_mesh)  {
 };
 
 RID FilamentRenderingServer::multimesh_create()  {
-	return execute<RID>(&FilamentRenderingServerBackend::multimesh_create);
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID>(&FilamentRenderingServerBackend::multimesh_create, output);
+
+	return output;
 };
 
 void FilamentRenderingServer::multimesh_allocate_data(RID p_multimesh, int p_instances, MultimeshTransformFormat p_transform_format, bool p_use_colors, bool p_use_custom_data)  {
@@ -330,7 +379,11 @@ int FilamentRenderingServer::multimesh_get_visible_instances(RID p_multimesh) co
 };
 
 RID FilamentRenderingServer::skeleton_create()  {
-	return execute<RID>(&FilamentRenderingServerBackend::skeleton_create);
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID>(&FilamentRenderingServerBackend::skeleton_create, output);
+
+	return output;
 };
 
 void FilamentRenderingServer::skeleton_allocate_data(RID p_skeleton, int p_bones, bool p_2d_skeleton)  {
@@ -362,15 +415,27 @@ void FilamentRenderingServer::skeleton_set_base_transform_2d(RID p_skeleton, con
 };
 
 RID FilamentRenderingServer::directional_light_create()  {
-	return execute<RID>(&FilamentRenderingServerBackend::directional_light_create);
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID>(&FilamentRenderingServerBackend::directional_light_create, output);
+
+	return output;
 };
 
 RID FilamentRenderingServer::omni_light_create()  {
-	return execute<RID>(&FilamentRenderingServerBackend::omni_light_create);
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID>(&FilamentRenderingServerBackend::omni_light_create, output);
+
+	return output;
 };
 
 RID FilamentRenderingServer::spot_light_create()  {
-	return execute<RID>(&FilamentRenderingServerBackend::spot_light_create);
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID>(&FilamentRenderingServerBackend::spot_light_create, output);
+
+	return output;
 };
 
 void FilamentRenderingServer::light_set_color(RID p_light, const Color & p_color)  {
@@ -430,7 +495,11 @@ void FilamentRenderingServer::light_directional_set_sky_mode(RID p_light, LightD
 };
 
 RID FilamentRenderingServer::shadow_atlas_create()  {
-	return execute<RID>(&FilamentRenderingServerBackend::shadow_atlas_create);
+	auto output = FilamentObjectManager::allocate();
+
+	execute<RID>(&FilamentRenderingServerBackend::shadow_atlas_create, output);
+
+	return output;
 };
 
 void FilamentRenderingServer::shadow_atlas_set_size(RID p_atlas, int p_size, bool p_use_16_bits)  {
@@ -458,7 +527,11 @@ void FilamentRenderingServer::light_projectors_set_filter(LightProjectorFilter p
 };
 
 RID FilamentRenderingServer::reflection_probe_create()  {
-	return execute<RID>(&FilamentRenderingServerBackend::reflection_probe_create);
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID>(&FilamentRenderingServerBackend::reflection_probe_create, output);
+
+	return output;
 };
 
 void FilamentRenderingServer::reflection_probe_set_update_mode(RID p_probe, ReflectionProbeUpdateMode p_mode)  {
@@ -518,7 +591,12 @@ void FilamentRenderingServer::reflection_probe_set_mesh_lod_threshold(RID p_prob
 };
 
 RID FilamentRenderingServer::decal_create()  {
-	return execute<RID>(&FilamentRenderingServerBackend::decal_create);
+
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID>(&FilamentRenderingServerBackend::decal_create, output);
+
+	return output;
 };
 
 void FilamentRenderingServer::decal_set_size(RID p_decal, const Vector3 & p_size)  {
@@ -562,7 +640,12 @@ void FilamentRenderingServer::decals_set_filter(DecalFilter p_quality)  {
 };
 
 RID FilamentRenderingServer::voxel_gi_create()  {
-	return execute<RID>(&FilamentRenderingServerBackend::voxel_gi_create);
+
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID>(&FilamentRenderingServerBackend::voxel_gi_create, output);
+
+	return output;
 };
 
 void FilamentRenderingServer::voxel_gi_allocate_data(RID p_voxel_gi, const Transform3D & p_to_cell_xform, const AABB & p_aabb, const Vector3i & p_octree_size, const Vector<uint8_t> & p_octree_cells, const Vector<uint8_t> & p_data_cells, const Vector<uint8_t> & p_distance_field, const Vector<int> & p_level_counts)  {
@@ -638,7 +721,12 @@ void FilamentRenderingServer::sdfgi_reset()  {
 };
 
 RID FilamentRenderingServer::lightmap_create()  {
-	return execute<RID>(&FilamentRenderingServerBackend::lightmap_create);
+
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID>(&FilamentRenderingServerBackend::lightmap_create, output);
+
+	return output;
 };
 
 void FilamentRenderingServer::lightmap_set_textures(RID p_lightmap, RID p_light, bool p_uses_spherical_haromics)  {
@@ -682,7 +770,12 @@ void FilamentRenderingServer::lightmap_set_probe_capture_update_speed(float p_sp
 };
 
 RID FilamentRenderingServer::particles_create()  {
-	return execute<RID>(&FilamentRenderingServerBackend::particles_create);
+
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID>(&FilamentRenderingServerBackend::particles_create, output);
+
+	return output;
 };
 
 void FilamentRenderingServer::particles_set_mode(RID p_particles, ParticlesMode p_mode)  {
@@ -818,7 +911,12 @@ void FilamentRenderingServer::particles_set_interp_to_end(RID p_particles, float
 };
 
 RID FilamentRenderingServer::particles_collision_create()  {
-	return execute<RID>(&FilamentRenderingServerBackend::particles_collision_create);
+
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID>(&FilamentRenderingServerBackend::particles_collision_create, output);
+
+	return output;
 };
 
 void FilamentRenderingServer::particles_collision_set_collision_type(RID p_particles_collision, ParticlesCollisionType p_type)  {
@@ -862,7 +960,12 @@ void FilamentRenderingServer::particles_collision_set_height_field_resolution(RI
 };
 
 RID FilamentRenderingServer::fog_volume_create()  {
-	return execute<RID>(&FilamentRenderingServerBackend::fog_volume_create);
+
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID>(&FilamentRenderingServerBackend::fog_volume_create, output);
+
+	return output;
 };
 
 void FilamentRenderingServer::fog_volume_set_shape(RID p_fog_volume, FogVolumeShape p_shape)  {
@@ -878,7 +981,11 @@ void FilamentRenderingServer::fog_volume_set_material(RID p_fog_volume, RID p_ma
 };
 
 RID FilamentRenderingServer::visibility_notifier_create()  {
-	return execute<RID>(&FilamentRenderingServerBackend::visibility_notifier_create);
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID>(&FilamentRenderingServerBackend::visibility_notifier_create, output);
+
+	return output;
 };
 
 void FilamentRenderingServer::visibility_notifier_set_aabb(RID p_notifier, const AABB & p_aabb)  {
@@ -890,7 +997,12 @@ void FilamentRenderingServer::visibility_notifier_set_callbacks(RID p_notifier, 
 };
 
 RID FilamentRenderingServer::occluder_create()  {
-	return execute<RID>(&FilamentRenderingServerBackend::occluder_create);
+
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID>(&FilamentRenderingServerBackend::occluder_create, output);
+
+	return output;
 };
 
 void FilamentRenderingServer::occluder_set_mesh(RID p_occluder, const PackedVector3Array & p_vertices, const PackedInt32Array & p_indices)  {
@@ -898,7 +1010,11 @@ void FilamentRenderingServer::occluder_set_mesh(RID p_occluder, const PackedVect
 };
 
 RID FilamentRenderingServer::camera_create()  {
-	return execute<RID>(&FilamentRenderingServerBackend::camera_create);
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID>(&FilamentRenderingServerBackend::camera_create, output);
+
+	return output;
 };
 
 void FilamentRenderingServer::camera_set_perspective(RID p_camera, float p_fovy_degrees, float p_z_near, float p_z_far)  {
@@ -934,7 +1050,11 @@ void FilamentRenderingServer::camera_set_use_vertical_aspect(RID p_camera, bool 
 };
 
 RID FilamentRenderingServer::viewport_create()  {
-	return execute<RID>(&FilamentRenderingServerBackend::viewport_create);
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID>(&FilamentRenderingServerBackend::viewport_create, output);
+
+	return output;
 };
 
 void FilamentRenderingServer::viewport_set_use_xr(RID p_viewport, bool p_use_xr)  {
@@ -1142,7 +1262,11 @@ void FilamentRenderingServer::viewport_set_vrs_texture(RID p_viewport, RID p_tex
 };
 
 RID FilamentRenderingServer::sky_create()  {
-	return execute<RID>(&FilamentRenderingServerBackend::sky_create);
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID>(&FilamentRenderingServerBackend::sky_create, output);
+
+	return output;
 };
 
 void FilamentRenderingServer::sky_set_radiance_size(RID p_sky, int p_radiance_size)  {
@@ -1162,7 +1286,12 @@ Ref<Image> FilamentRenderingServer::sky_bake_panorama(RID p_sky, float p_energy,
 };
 
 RID FilamentRenderingServer::environment_create()  {
-	return execute<RID>(&FilamentRenderingServerBackend::environment_create);
+
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID>(&FilamentRenderingServerBackend::environment_create, output);
+
+	return output;
 };
 
 void FilamentRenderingServer::environment_set_background(RID p_env, EnvironmentBG p_bg)  {
@@ -1286,7 +1415,12 @@ void FilamentRenderingServer::sub_surface_scattering_set_scale(float p_scale, fl
 };
 
 RID FilamentRenderingServer::camera_attributes_create()  {
-	return execute<RID>(&FilamentRenderingServerBackend::camera_attributes_create);
+
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID>(&FilamentRenderingServerBackend::camera_attributes_create, output);
+
+	return output;
 };
 
 void FilamentRenderingServer::camera_attributes_set_dof_blur_quality(DOFBlurQuality p_quality, bool p_use_jitter)  {
@@ -1310,7 +1444,12 @@ void FilamentRenderingServer::camera_attributes_set_auto_exposure(RID p_camera_a
 };
 
 RID FilamentRenderingServer::scenario_create()  {
-	return execute<RID>(&FilamentRenderingServerBackend::scenario_create);
+
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID>(&FilamentRenderingServerBackend::scenario_create, output);
+
+	return output;
 };
 
 void FilamentRenderingServer::scenario_set_environment(RID p_scenario, RID p_environment)  {
@@ -1326,7 +1465,12 @@ void FilamentRenderingServer::scenario_set_camera_attributes(RID p_scenario, RID
 };
 
 RID FilamentRenderingServer::instance_create()  {
-	return execute<RID>(&FilamentRenderingServerBackend::instance_create);
+
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID>(&FilamentRenderingServerBackend::instance_create, output);
+
+	return output;
 };
 
 void FilamentRenderingServer::instance_set_base(RID p_instance, RID p_base)  {
@@ -1450,7 +1594,12 @@ TypedArray<Image> FilamentRenderingServer::bake_render_uv2(RID p_base, const Typ
 };
 
 RID FilamentRenderingServer::canvas_create()  {
-	return execute<RID>(&FilamentRenderingServerBackend::canvas_create);
+
+	auto output = FilamentObjectManager::allocate();
+
+	execute<RID>(&FilamentRenderingServerBackend::canvas_create, output);
+
+	return output;
 };
 
 void FilamentRenderingServer::canvas_set_item_mirroring(RID p_canvas, RID p_item, const Point2 & p_mirroring)  {
@@ -1470,7 +1619,12 @@ void FilamentRenderingServer::canvas_set_disable_scale(bool p_disable)  {
 };
 
 RID FilamentRenderingServer::canvas_texture_create()  {
-	return execute<RID>(&FilamentRenderingServerBackend::canvas_texture_create);
+
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID>(&FilamentRenderingServerBackend::canvas_texture_create, output);
+
+	return output;
 };
 
 void FilamentRenderingServer::canvas_texture_set_channel(RID p_canvas_texture, CanvasTextureChannel p_channel, RID p_texture)  {
@@ -1490,7 +1644,11 @@ void FilamentRenderingServer::canvas_texture_set_texture_repeat(RID p_canvas_tex
 };
 
 RID FilamentRenderingServer::canvas_item_create()  {
-	return execute<RID>(&FilamentRenderingServerBackend::canvas_item_create);
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID>(&FilamentRenderingServerBackend::canvas_item_create, output);
+
+	return output;
 };
 
 void FilamentRenderingServer::canvas_item_set_parent(RID p_item, RID p_parent)  {
@@ -1678,7 +1836,12 @@ bool FilamentRenderingServer::canvas_item_get_debug_redraw() const {
 };
 
 RID FilamentRenderingServer::canvas_light_create()  {
-	return execute<RID>(&FilamentRenderingServerBackend::canvas_light_create);
+
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID>(&FilamentRenderingServerBackend::canvas_light_create, output);
+
+	return output;
 };
 
 void FilamentRenderingServer::canvas_light_set_mode(RID p_light, CanvasLightMode p_mode)  {
@@ -1762,7 +1925,12 @@ void FilamentRenderingServer::canvas_light_set_shadow_smooth(RID p_light, float 
 };
 
 RID FilamentRenderingServer::canvas_light_occluder_create()  {
-	return execute<RID>(&FilamentRenderingServerBackend::canvas_light_occluder_create);
+
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID>(&FilamentRenderingServerBackend::canvas_light_occluder_create, output);
+
+	return output;
 };
 
 void FilamentRenderingServer::canvas_light_occluder_attach_to_canvas(RID p_occluder, RID p_canvas)  {
@@ -1790,7 +1958,12 @@ void FilamentRenderingServer::canvas_light_occluder_set_light_mask(RID p_occlude
 };
 
 RID FilamentRenderingServer::canvas_occluder_polygon_create()  {
-	return execute<RID>(&FilamentRenderingServerBackend::canvas_occluder_polygon_create);
+
+	auto output = FilamentObjectManager::allocate();
+
+	execute<void, RID>(&FilamentRenderingServerBackend::canvas_occluder_polygon_create, output);
+
+	return output;
 };
 
 void FilamentRenderingServer::canvas_occluder_polygon_set_shape(RID p_occluder_polygon, const Vector<Vector2> & p_shape, bool p_closed)  {
@@ -1862,7 +2035,9 @@ bool FilamentRenderingServer::has_changed() const {
 };
 
 void FilamentRenderingServer::finish()  {
-	return execute<void>(&FilamentRenderingServerBackend::finish);
+	/*
+	 * Shutdown request - we handle that in the destructor.
+	 */
 };
 
 uint64_t FilamentRenderingServer::get_rendering_info(RenderingInfo p_info)  {

@@ -46,6 +46,8 @@ res.check_returncode()
 
 sources = [
     "filament_engine_object.cpp",
+    "filament_object.cpp",
+    "filament_object_manager.cpp",
     "filament_rendering_server.cpp",
     "filament_rendering_server.h",
     "filament_rendering_server_backend.cpp",

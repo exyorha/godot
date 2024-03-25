@@ -3,6 +3,7 @@
 
 #include "servers/rendering_server.h"
 #include "threaded_execution_queue.h"
+#include "filament_object_manager.h"
 
 #include <vector>
 #include <memory>
@@ -22,17 +23,18 @@ public:
 	FilamentRenderingServerBackend &operator =(const FilamentRenderingServerBackend &other) = delete;
 
 	void runStepOnThread() override;
+	void shutdown() override;
 
-	RID texture_2d_create(const Ref<Image> & p_image) ;
-	RID texture_2d_layered_create(const Vector<Ref<Image>> & p_layers, RenderingServer::TextureLayeredType p_layered_type) ;
-	RID texture_3d_create(Image::Format anonarg, int p_width, int p_height, int p_depth, bool p_mipmaps, const Vector<Ref<Image>> & p_data) ;
-	RID texture_proxy_create(RID p_base) ;
+	void texture_2d_create(RID output, const Ref<Image> & p_image) ;
+	void texture_2d_layered_create(RID output, const Vector<Ref<Image>> & p_layers, RenderingServer::TextureLayeredType p_layered_type) ;
+	void texture_3d_create(RID output, Image::Format anonarg, int p_width, int p_height, int p_depth, bool p_mipmaps, const Vector<Ref<Image>> & p_data) ;
+	void texture_proxy_create(RID output, RID p_base) ;
 	void texture_2d_update(RID p_texture, const Ref<Image> & p_image, int p_layer) ;
 	void texture_3d_update(RID p_texture, const Vector<Ref<Image>> & p_data) ;
 	void texture_proxy_update(RID p_texture, RID p_proxy_to) ;
-	RID texture_2d_placeholder_create() ;
-	RID texture_2d_layered_placeholder_create(RenderingServer::TextureLayeredType p_layered_type) ;
-	RID texture_3d_placeholder_create() ;
+	void texture_2d_placeholder_create(RID output) ;
+	void texture_2d_layered_placeholder_create(RID output, RenderingServer::TextureLayeredType p_layered_type) ;
+	void texture_3d_placeholder_create(RID output) ;
 	Ref<Image> texture_2d_get(RID p_texture) const;
 	Ref<Image> texture_2d_layer_get(RID p_texture, int p_layer) const;
 	Vector<Ref<Image>> texture_3d_get(RID p_texture) const;
@@ -46,10 +48,10 @@ public:
 	void texture_set_detect_roughness_callback(RID p_texture, RenderingServer::TextureDetectRoughnessCallback p_callback, void * p_userdata) ;
 	void texture_debug_usage(List<RenderingServer::TextureInfo> * r_info) ;
 	void texture_set_force_redraw_if_visible(RID p_texture, bool p_enable) ;
-	RID texture_rd_create(const RID & p_rd_texture, const RenderingServer::TextureLayeredType p_layer_type) ;
+	void texture_rd_create(RID output, const RID & p_rd_texture, const RenderingServer::TextureLayeredType p_layer_type) ;
 	RID texture_get_rd_texture(RID p_texture, bool p_srgb) const;
 	uint64_t texture_get_native_handle(RID p_texture, bool p_srgb) const;
-	RID shader_create() ;
+	void shader_create(RID output) ;
 	void shader_set_code(RID p_shader, const String & p_code) ;
 	void shader_set_path_hint(RID p_shader, const String & p_path) ;
 	String shader_get_code(RID p_shader) const;
@@ -58,14 +60,14 @@ public:
 	void shader_set_default_texture_parameter(RID p_shader, const StringName & p_name, RID p_texture, int p_index) ;
 	RID shader_get_default_texture_parameter(RID p_shader, const StringName & p_name, int p_index) const;
 	RenderingServer::ShaderNativeSourceCode shader_get_native_source_code(RID p_shader) const;
-	RID material_create() ;
+	void material_create(RID output) ;
 	void material_set_shader(RID p_shader_material, RID p_shader) ;
 	void material_set_param(RID p_material, const StringName & p_param, const Variant & p_value) ;
 	Variant material_get_param(RID p_material, const StringName & p_param) const;
 	void material_set_render_priority(RID p_material, int priority) ;
 	void material_set_next_pass(RID p_material, RID p_next_material) ;
-	RID mesh_create_from_surfaces(const Vector<RenderingServer::SurfaceData> & p_surfaces, int p_blend_shape_count) ;
-	RID mesh_create() ;
+	void mesh_create_from_surfaces(RID output, const Vector<RenderingServer::SurfaceData> & p_surfaces, int p_blend_shape_count) ;
+	void mesh_create(RID output) ;
 	void mesh_set_blend_shape_count(RID p_mesh, int p_blend_shape_count) ;
 	void mesh_add_surface(RID p_mesh, const RenderingServer::SurfaceData & p_surface) ;
 	int mesh_get_blend_shape_count(RID p_mesh) const;
@@ -82,7 +84,7 @@ public:
 	AABB mesh_get_custom_aabb(RID p_mesh) const;
 	void mesh_set_shadow_mesh(RID p_mesh, RID p_shadow_mesh) ;
 	void mesh_clear(RID p_mesh) ;
-	RID multimesh_create() ;
+	void multimesh_create(RID output) ;
 	void multimesh_allocate_data(RID p_multimesh, int p_instances, RenderingServer::MultimeshTransformFormat p_transform_format, bool p_use_colors, bool p_use_custom_data) ;
 	int multimesh_get_instance_count(RID p_multimesh) const;
 	void multimesh_set_mesh(RID p_multimesh, RID p_mesh) ;
@@ -100,7 +102,7 @@ public:
 	Vector<float> multimesh_get_buffer(RID p_multimesh) const;
 	void multimesh_set_visible_instances(RID p_multimesh, int p_visible) ;
 	int multimesh_get_visible_instances(RID p_multimesh) const;
-	RID skeleton_create() ;
+	void skeleton_create(RID output) ;
 	void skeleton_allocate_data(RID p_skeleton, int p_bones, bool p_2d_skeleton) ;
 	int skeleton_get_bone_count(RID p_skeleton) const;
 	void skeleton_bone_set_transform(RID p_skeleton, int p_bone, const Transform3D & p_transform) ;
@@ -108,9 +110,9 @@ public:
 	void skeleton_bone_set_transform_2d(RID p_skeleton, int p_bone, const Transform2D & p_transform) ;
 	Transform2D skeleton_bone_get_transform_2d(RID p_skeleton, int p_bone) const;
 	void skeleton_set_base_transform_2d(RID p_skeleton, const Transform2D & p_base_transform) ;
-	RID directional_light_create() ;
-	RID omni_light_create() ;
-	RID spot_light_create() ;
+	void directional_light_create(RID output) ;
+	void omni_light_create(RID output) ;
+	void spot_light_create(RID output) ;
 	void light_set_color(RID p_light, const Color & p_color) ;
 	void light_set_param(RID p_light, RenderingServer::LightParam p_param, float p_value) ;
 	void light_set_shadow(RID p_light, bool p_enabled) ;
@@ -125,14 +127,14 @@ public:
 	void light_directional_set_shadow_mode(RID p_light, RenderingServer::LightDirectionalShadowMode p_mode) ;
 	void light_directional_set_blend_splits(RID p_light, bool p_enable) ;
 	void light_directional_set_sky_mode(RID p_light, RenderingServer::LightDirectionalSkyMode p_mode) ;
-	RID shadow_atlas_create() ;
+	void shadow_atlas_create(RID output) ;
 	void shadow_atlas_set_size(RID p_atlas, int p_size, bool p_use_16_bits) ;
 	void shadow_atlas_set_quadrant_subdivision(RID p_atlas, int p_quadrant, int p_subdivision) ;
 	void directional_shadow_atlas_set_size(int p_size, bool p_16_bits) ;
 	void positional_soft_shadow_filter_set_quality(RenderingServer::ShadowQuality p_quality) ;
 	void directional_soft_shadow_filter_set_quality(RenderingServer::ShadowQuality p_quality) ;
 	void light_projectors_set_filter(RenderingServer::LightProjectorFilter p_filter) ;
-	RID reflection_probe_create() ;
+	void reflection_probe_create(RID output);
 	void reflection_probe_set_update_mode(RID p_probe, RenderingServer::ReflectionProbeUpdateMode p_mode) ;
 	void reflection_probe_set_intensity(RID p_probe, float p_intensity) ;
 	void reflection_probe_set_ambient_mode(RID p_probe, RenderingServer::ReflectionProbeAmbientMode p_mode) ;
@@ -147,7 +149,7 @@ public:
 	void reflection_probe_set_cull_mask(RID p_probe, uint32_t p_layers) ;
 	void reflection_probe_set_resolution(RID p_probe, int p_resolution) ;
 	void reflection_probe_set_mesh_lod_threshold(RID p_probe, float p_pixels) ;
-	RID decal_create() ;
+	void decal_create(RID output) ;
 	void decal_set_size(RID p_decal, const Vector3 & p_size) ;
 	void decal_set_texture(RID p_decal, RenderingServer::DecalTexture p_type, RID p_texture) ;
 	void decal_set_emission_energy(RID p_decal, float p_energy) ;
@@ -158,7 +160,7 @@ public:
 	void decal_set_fade(RID p_decal, float p_above, float p_below) ;
 	void decal_set_normal_fade(RID p_decal, float p_fade) ;
 	void decals_set_filter(RenderingServer::DecalFilter p_quality) ;
-	RID voxel_gi_create() ;
+	void voxel_gi_create(RID output) ;
 	void voxel_gi_allocate_data(RID p_voxel_gi, const Transform3D & p_to_cell_xform, const AABB & p_aabb, const Vector3i & p_octree_size, const Vector<uint8_t> & p_octree_cells, const Vector<uint8_t> & p_data_cells, const Vector<uint8_t> & p_distance_field, const Vector<int> & p_level_counts) ;
 	AABB voxel_gi_get_bounds(RID p_voxel_gi) const;
 	Vector3i voxel_gi_get_octree_size(RID p_voxel_gi) const;
@@ -177,7 +179,7 @@ public:
 	void voxel_gi_set_use_two_bounces(RID p_voxel_gi, bool p_enable) ;
 	void voxel_gi_set_quality(RenderingServer::VoxelGIQuality anonarg) ;
 	void sdfgi_reset() ;
-	RID lightmap_create() ;
+	void lightmap_create(RID output) ;
 	void lightmap_set_textures(RID p_lightmap, RID p_light, bool p_uses_spherical_haromics) ;
 	void lightmap_set_probe_bounds(RID p_lightmap, const AABB & p_bounds) ;
 	void lightmap_set_probe_interior(RID p_lightmap, bool p_interior) ;
@@ -188,7 +190,7 @@ public:
 	PackedInt32Array lightmap_get_probe_capture_tetrahedra(RID p_lightmap) const;
 	PackedInt32Array lightmap_get_probe_capture_bsp_tree(RID p_lightmap) const;
 	void lightmap_set_probe_capture_update_speed(float p_speed) ;
-	RID particles_create() ;
+	void particles_create(RID output) ;
 	void particles_set_mode(RID p_particles, RenderingServer::ParticlesMode p_mode) ;
 	void particles_set_emitting(RID p_particles, bool p_enable) ;
 	bool particles_get_emitting(RID p_particles) ;
@@ -222,7 +224,7 @@ public:
 	void particles_set_emission_transform(RID p_particles, const Transform3D & p_transform) ;
 	void particles_set_emitter_velocity(RID p_particles, const Vector3 & p_velocity) ;
 	void particles_set_interp_to_end(RID p_particles, float p_interp) ;
-	RID particles_collision_create() ;
+	void particles_collision_create(RID output) ;
 	void particles_collision_set_collision_type(RID p_particles_collision, RenderingServer::ParticlesCollisionType p_type) ;
 	void particles_collision_set_cull_mask(RID p_particles_collision, uint32_t p_cull_mask) ;
 	void particles_collision_set_sphere_radius(RID p_particles_collision, real_t p_radius) ;
@@ -233,16 +235,16 @@ public:
 	void particles_collision_set_field_texture(RID p_particles_collision, RID p_texture) ;
 	void particles_collision_height_field_update(RID p_particles_collision) ;
 	void particles_collision_set_height_field_resolution(RID p_particles_collision, RenderingServer::ParticlesCollisionHeightfieldResolution p_resolution) ;
-	RID fog_volume_create() ;
+	void fog_volume_create(RID output) ;
 	void fog_volume_set_shape(RID p_fog_volume, RenderingServer::FogVolumeShape p_shape) ;
 	void fog_volume_set_size(RID p_fog_volume, const Vector3 & p_size) ;
 	void fog_volume_set_material(RID p_fog_volume, RID p_material) ;
-	RID visibility_notifier_create() ;
+	void visibility_notifier_create(RID output) ;
 	void visibility_notifier_set_aabb(RID p_notifier, const AABB & p_aabb) ;
 	void visibility_notifier_set_callbacks(RID p_notifier, const Callable & p_enter_callbable, const Callable & p_exit_callable) ;
-	RID occluder_create() ;
+	void occluder_create(RID output) ;
 	void occluder_set_mesh(RID p_occluder, const PackedVector3Array & p_vertices, const PackedInt32Array & p_indices) ;
-	RID camera_create() ;
+	void camera_create(RID output) ;
 	void camera_set_perspective(RID p_camera, float p_fovy_degrees, float p_z_near, float p_z_far) ;
 	void camera_set_orthogonal(RID p_camera, float p_size, float p_z_near, float p_z_far) ;
 	void camera_set_frustum(RID p_camera, float p_size, Vector2 p_offset, float p_z_near, float p_z_far) ;
@@ -251,7 +253,7 @@ public:
 	void camera_set_environment(RID p_camera, RID p_env) ;
 	void camera_set_camera_attributes(RID p_camera, RID p_camera_attributes) ;
 	void camera_set_use_vertical_aspect(RID p_camera, bool p_enable) ;
-	RID viewport_create() ;
+	void viewport_create(RID output) ;
 	void viewport_set_use_xr(RID p_viewport, bool p_use_xr) ;
 	void viewport_set_size(RID p_viewport, int p_width, int p_height) ;
 	void viewport_set_active(RID p_viewport, bool p_active) ;
@@ -303,12 +305,12 @@ public:
 	RID viewport_find_from_screen_attachment(DisplayServer::WindowID p_id) const;
 	void viewport_set_vrs_mode(RID p_viewport, RenderingServer::ViewportVRSMode p_mode) ;
 	void viewport_set_vrs_texture(RID p_viewport, RID p_texture) ;
-	RID sky_create() ;
+	void sky_create(RID output) ;
 	void sky_set_radiance_size(RID p_sky, int p_radiance_size) ;
 	void sky_set_mode(RID p_sky, RenderingServer::SkyMode p_mode) ;
 	void sky_set_material(RID p_sky, RID p_material) ;
 	Ref<Image> sky_bake_panorama(RID p_sky, float p_energy, bool p_bake_irradiance, const Size2i & p_size) ;
-	RID environment_create() ;
+	void environment_create(RID output) ;
 	void environment_set_background(RID p_env, RenderingServer::EnvironmentBG p_bg) ;
 	void environment_set_sky(RID p_env, RID p_sky) ;
 	void environment_set_sky_custom_fov(RID p_env, float p_scale) ;
@@ -339,17 +341,17 @@ public:
 	void screen_space_roughness_limiter_set_active(bool p_enable, float p_amount, float p_limit) ;
 	void sub_surface_scattering_set_quality(RenderingServer::SubSurfaceScatteringQuality p_quality) ;
 	void sub_surface_scattering_set_scale(float p_scale, float p_depth_scale) ;
-	RID camera_attributes_create() ;
+	void camera_attributes_create(RID output) ;
 	void camera_attributes_set_dof_blur_quality(RenderingServer::DOFBlurQuality p_quality, bool p_use_jitter) ;
 	void camera_attributes_set_dof_blur_bokeh_shape(RenderingServer::DOFBokehShape p_shape) ;
 	void camera_attributes_set_dof_blur(RID p_camera_attributes, bool p_far_enable, float p_far_distance, float p_far_transition, bool p_near_enable, float p_near_distance, float p_near_transition, float p_amount) ;
 	void camera_attributes_set_exposure(RID p_camera_attributes, float p_multiplier, float p_exposure_normalization) ;
 	void camera_attributes_set_auto_exposure(RID p_camera_attributes, bool p_enable, float p_min_sensitivity, float p_max_sensitivity, float p_speed, float p_scale) ;
-	RID scenario_create() ;
+	void scenario_create(RID output) ;
 	void scenario_set_environment(RID p_scenario, RID p_environment) ;
 	void scenario_set_fallback_environment(RID p_scenario, RID p_environment) ;
 	void scenario_set_camera_attributes(RID p_scenario, RID p_camera_attributes) ;
-	RID instance_create() ;
+	void instance_create(RID output) ;
 	void instance_set_base(RID p_instance, RID p_base) ;
 	void instance_set_scenario(RID p_instance, RID p_scenario) ;
 	void instance_set_layer_mask(RID p_instance, uint32_t p_mask) ;
@@ -380,17 +382,17 @@ public:
 	Variant instance_geometry_get_shader_parameter_default_value(RID p_instance, const StringName & anonarg) const;
 	void instance_geometry_get_shader_parameter_list(RID p_instance, List<PropertyInfo> * p_parameters) const;
 	TypedArray<Image> bake_render_uv2(RID p_base, const TypedArray<RID> & p_material_overrides, const Size2i & p_image_size) ;
-	RID canvas_create() ;
+	void canvas_create(RID output) ;
 	void canvas_set_item_mirroring(RID p_canvas, RID p_item, const Point2 & p_mirroring) ;
 	void canvas_set_modulate(RID p_canvas, const Color & p_color) ;
 	void canvas_set_parent(RID p_canvas, RID p_parent, float p_scale) ;
 	void canvas_set_disable_scale(bool p_disable) ;
-	RID canvas_texture_create() ;
+	void canvas_texture_create(RID output) ;
 	void canvas_texture_set_channel(RID p_canvas_texture, RenderingServer::CanvasTextureChannel p_channel, RID p_texture) ;
 	void canvas_texture_set_shading_parameters(RID p_canvas_texture, const Color & p_base_color, float p_shininess) ;
 	void canvas_texture_set_texture_filter(RID p_canvas_texture, RenderingServer::CanvasItemTextureFilter p_filter) ;
 	void canvas_texture_set_texture_repeat(RID p_canvas_texture, RenderingServer::CanvasItemTextureRepeat p_repeat) ;
-	RID canvas_item_create() ;
+	void canvas_item_create(RID output) ;
 	void canvas_item_set_parent(RID p_item, RID p_parent) ;
 	void canvas_item_set_default_texture_filter(RID p_item, RenderingServer::CanvasItemTextureFilter p_filter) ;
 	void canvas_item_set_default_texture_repeat(RID p_item, RenderingServer::CanvasItemTextureRepeat p_repeat) ;
@@ -437,7 +439,7 @@ public:
 	void canvas_item_set_canvas_group_mode(RID p_item, RenderingServer::CanvasGroupMode p_mode, float p_clear_margin, bool p_fit_empty, float p_fit_margin, bool p_blur_mipmaps) ;
 	void canvas_item_set_debug_redraw(bool p_enabled) ;
 	bool canvas_item_get_debug_redraw() const;
-	RID canvas_light_create() ;
+	void canvas_light_create(RID output) ;
 	void canvas_light_set_mode(RID p_light, RenderingServer::CanvasLightMode p_mode) ;
 	void canvas_light_attach_to_canvas(RID p_light, RID p_canvas) ;
 	void canvas_light_set_enabled(RID p_light, bool p_enabled) ;
@@ -458,14 +460,14 @@ public:
 	void canvas_light_set_shadow_filter(RID p_light, RenderingServer::CanvasLightShadowFilter p_filter) ;
 	void canvas_light_set_shadow_color(RID p_light, const Color & p_color) ;
 	void canvas_light_set_shadow_smooth(RID p_light, float p_smooth) ;
-	RID canvas_light_occluder_create() ;
+	void canvas_light_occluder_create(RID output) ;
 	void canvas_light_occluder_attach_to_canvas(RID p_occluder, RID p_canvas) ;
 	void canvas_light_occluder_set_enabled(RID p_occluder, bool p_enabled) ;
 	void canvas_light_occluder_set_polygon(RID p_occluder, RID p_polygon) ;
 	void canvas_light_occluder_set_as_sdf_collision(RID p_occluder, bool p_enable) ;
 	void canvas_light_occluder_set_transform(RID p_occluder, const Transform2D & p_xform) ;
 	void canvas_light_occluder_set_light_mask(RID p_occluder, int p_mask) ;
-	RID canvas_occluder_polygon_create() ;
+	void canvas_occluder_polygon_create(RID output) ;
 	void canvas_occluder_polygon_set_shape(RID p_occluder_polygon, const Vector<Vector2> & p_shape, bool p_closed) ;
 	void canvas_occluder_polygon_set_cull_mode(RID p_occluder_polygon, RenderingServer::CanvasOccluderPolygonCullMode p_mode) ;
 	void canvas_set_shadow_texture_size(int p_size) ;
@@ -483,7 +485,6 @@ public:
 	void draw(bool p_swap_buffers, double frame_step) ;
 	void sync() ;
 	bool has_changed() const;
-	void finish() ;
 	uint64_t get_rendering_info(RenderingServer::RenderingInfo p_info) ;
 	String get_video_adapter_name() const;
 	String get_video_adapter_vendor() const;
@@ -512,14 +513,14 @@ public:
 	Error window_create(DisplayServer::WindowID p_window_id, void *p_native_window);
 	void window_destroy(DisplayServer::WindowID p_window_id);
 
-	inline filament::Engine *filamentEngine() const {
-		return m_engine.get();
+	static inline filament::Engine *filamentEngine() {
+		return m_filamentEngine;
 	}
 
 private:
 	class EnginePointer {
 	public:
-		inline EnginePointer(filament::Engine *engine = nullptr) noexcept;
+		EnginePointer(filament::Engine *engine = nullptr, filament::Engine **pointerToPointer = nullptr) noexcept;
 		~EnginePointer();
 
 		EnginePointer(EnginePointer &other) = delete;
@@ -535,10 +536,13 @@ private:
 
 	private:
 		filament::Engine *m_ptr;
+		filament::Engine **m_pointerToPointer;
 	};
 
 	EnginePointer m_engine;
+	FilamentObjectManager m_objectManager;
 	std::vector<std::unique_ptr<FilamentWindow>> m_windows;
+	static filament::Engine *m_filamentEngine;
 };
 
 #endif

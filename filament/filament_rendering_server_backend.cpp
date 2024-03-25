@@ -6,7 +6,9 @@
 
 #include <filament/Engine.h>
 
-FilamentRenderingServerBackend::FilamentRenderingServerBackend() : m_engine(filament::Engine::create()) {
+filament::Engine *FilamentRenderingServerBackend::m_filamentEngine = nullptr;
+
+FilamentRenderingServerBackend::FilamentRenderingServerBackend() : m_engine(filament::Engine::create(), &m_filamentEngine) {
 	if(!m_engine) {
 		throw std::runtime_error("failed to create the filament Engine");
 	}
@@ -14,12 +16,20 @@ FilamentRenderingServerBackend::FilamentRenderingServerBackend() : m_engine(fila
 
 FilamentRenderingServerBackend::~FilamentRenderingServerBackend() = default;
 
-FilamentRenderingServerBackend::EnginePointer::EnginePointer(filament::Engine *engine) noexcept : m_ptr(engine) {
+FilamentRenderingServerBackend::EnginePointer::EnginePointer(filament::Engine *engine, filament::Engine **pointerToPointer) noexcept : m_ptr(engine),
+	m_pointerToPointer(pointerToPointer) {
 
+	if(m_pointerToPointer) {
+		*m_pointerToPointer = engine;
+	}
 }
 
 FilamentRenderingServerBackend::EnginePointer::~EnginePointer() {
 	filament::Engine::destroy(&m_ptr);
+
+	if(m_pointerToPointer) {
+		*m_pointerToPointer = nullptr;
+	}
 }
 
 void FilamentRenderingServerBackend::runStepOnThread() {
@@ -44,24 +54,25 @@ void FilamentRenderingServerBackend::runStepOnThread() {
 	}
 }
 
-RID FilamentRenderingServerBackend::texture_2d_create(const Ref<Image> & p_image)  {
+void FilamentRenderingServerBackend::shutdown() {
+	m_windows.clear();
+	m_objectManager.clear();
+}
+
+void FilamentRenderingServerBackend::texture_2d_create(RID output, const Ref<Image> & p_image)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "texture_2d_create");
-	return RID();
 };
 
-RID FilamentRenderingServerBackend::texture_2d_layered_create(const Vector<Ref<Image>> & p_layers, RenderingServer::TextureLayeredType p_layered_type)  {
+void FilamentRenderingServerBackend::texture_2d_layered_create(RID output, const Vector<Ref<Image>> & p_layers, RenderingServer::TextureLayeredType p_layered_type)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "texture_2d_layered_create");
-	return RID();
 };
 
-RID FilamentRenderingServerBackend::texture_3d_create(Image::Format anonarg, int p_width, int p_height, int p_depth, bool p_mipmaps, const Vector<Ref<Image>> & p_data)  {
+void FilamentRenderingServerBackend::texture_3d_create(RID output, Image::Format anonarg, int p_width, int p_height, int p_depth, bool p_mipmaps, const Vector<Ref<Image>> & p_data)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "texture_3d_create");
-	return RID();
 };
 
-RID FilamentRenderingServerBackend::texture_proxy_create(RID p_base)  {
+void FilamentRenderingServerBackend::texture_proxy_create(RID output, RID p_base)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "texture_proxy_create");
-	return RID();
 };
 
 void FilamentRenderingServerBackend::texture_2d_update(RID p_texture, const Ref<Image> & p_image, int p_layer)  {
@@ -76,19 +87,16 @@ void FilamentRenderingServerBackend::texture_proxy_update(RID p_texture, RID p_p
 	printf("FilamentRenderingServerBackend::%s stub!\n", "texture_proxy_update");
 };
 
-RID FilamentRenderingServerBackend::texture_2d_placeholder_create()  {
+void FilamentRenderingServerBackend::texture_2d_placeholder_create(RID output)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "texture_2d_placeholder_create");
-	return RID();
 };
 
-RID FilamentRenderingServerBackend::texture_2d_layered_placeholder_create(RenderingServer::TextureLayeredType p_layered_type)  {
+void FilamentRenderingServerBackend::texture_2d_layered_placeholder_create(RID output, RenderingServer::TextureLayeredType p_layered_type)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "texture_2d_layered_placeholder_create");
-	return RID();
 };
 
-RID FilamentRenderingServerBackend::texture_3d_placeholder_create()  {
+void FilamentRenderingServerBackend::texture_3d_placeholder_create(RID output)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "texture_3d_placeholder_create");
-	return RID();
 };
 
 Ref<Image> FilamentRenderingServerBackend::texture_2d_get(RID p_texture) const {
@@ -148,9 +156,8 @@ void FilamentRenderingServerBackend::texture_set_force_redraw_if_visible(RID p_t
 	printf("FilamentRenderingServerBackend::%s stub!\n", "texture_set_force_redraw_if_visible");
 };
 
-RID FilamentRenderingServerBackend::texture_rd_create(const RID & p_rd_texture, const RenderingServer::TextureLayeredType p_layer_type)  {
+void FilamentRenderingServerBackend::texture_rd_create(RID output, const RID & p_rd_texture, const RenderingServer::TextureLayeredType p_layer_type)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "texture_rd_create");
-	return RID();
 };
 
 RID FilamentRenderingServerBackend::texture_get_rd_texture(RID p_texture, bool p_srgb) const {
@@ -163,9 +170,8 @@ uint64_t FilamentRenderingServerBackend::texture_get_native_handle(RID p_texture
 	return uint64_t();
 };
 
-RID FilamentRenderingServerBackend::shader_create()  {
+void FilamentRenderingServerBackend::shader_create(RID output)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "shader_create");
-	return RID();
 };
 
 void FilamentRenderingServerBackend::shader_set_code(RID p_shader, const String & p_code)  {
@@ -204,9 +210,8 @@ RenderingServer::ShaderNativeSourceCode FilamentRenderingServerBackend::shader_g
 	return RenderingServer::ShaderNativeSourceCode();
 };
 
-RID FilamentRenderingServerBackend::material_create()  {
+void FilamentRenderingServerBackend::material_create(RID output)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "material_create");
-	return RID();
 };
 
 void FilamentRenderingServerBackend::material_set_shader(RID p_shader_material, RID p_shader)  {
@@ -230,14 +235,12 @@ void FilamentRenderingServerBackend::material_set_next_pass(RID p_material, RID 
 	printf("FilamentRenderingServerBackend::%s stub!\n", "material_set_next_pass");
 };
 
-RID FilamentRenderingServerBackend::mesh_create_from_surfaces(const Vector<RenderingServer::SurfaceData> & p_surfaces, int p_blend_shape_count)  {
+void FilamentRenderingServerBackend::mesh_create_from_surfaces(RID output, const Vector<RenderingServer::SurfaceData> & p_surfaces, int p_blend_shape_count)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "mesh_create_from_surfaces");
-	return RID();
 };
 
-RID FilamentRenderingServerBackend::mesh_create()  {
+void FilamentRenderingServerBackend::mesh_create(RID output)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "mesh_create");
-	return RID();
 };
 
 void FilamentRenderingServerBackend::mesh_set_blend_shape_count(RID p_mesh, int p_blend_shape_count)  {
@@ -310,9 +313,8 @@ void FilamentRenderingServerBackend::mesh_clear(RID p_mesh)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "mesh_clear");
 };
 
-RID FilamentRenderingServerBackend::multimesh_create()  {
+void FilamentRenderingServerBackend::multimesh_create(RID output)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "multimesh_create");
-	return RID();
 };
 
 void FilamentRenderingServerBackend::multimesh_allocate_data(RID p_multimesh, int p_instances, RenderingServer::MultimeshTransformFormat p_transform_format, bool p_use_colors, bool p_use_custom_data)  {
@@ -392,9 +394,8 @@ int FilamentRenderingServerBackend::multimesh_get_visible_instances(RID p_multim
 	return int();
 };
 
-RID FilamentRenderingServerBackend::skeleton_create()  {
+void FilamentRenderingServerBackend::skeleton_create(RID output)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "skeleton_create");
-	return RID();
 };
 
 void FilamentRenderingServerBackend::skeleton_allocate_data(RID p_skeleton, int p_bones, bool p_2d_skeleton)  {
@@ -428,19 +429,16 @@ void FilamentRenderingServerBackend::skeleton_set_base_transform_2d(RID p_skelet
 	printf("FilamentRenderingServerBackend::%s stub!\n", "skeleton_set_base_transform_2d");
 };
 
-RID FilamentRenderingServerBackend::directional_light_create()  {
+void FilamentRenderingServerBackend::directional_light_create(RID output)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "directional_light_create");
-	return RID();
 };
 
-RID FilamentRenderingServerBackend::omni_light_create()  {
+void FilamentRenderingServerBackend::omni_light_create(RID output)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "omni_light_create");
-	return RID();
 };
 
-RID FilamentRenderingServerBackend::spot_light_create()  {
+void FilamentRenderingServerBackend::spot_light_create(RID output)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "spot_light_create");
-	return RID();
 };
 
 void FilamentRenderingServerBackend::light_set_color(RID p_light, const Color & p_color)  {
@@ -499,9 +497,8 @@ void FilamentRenderingServerBackend::light_directional_set_sky_mode(RID p_light,
 	printf("FilamentRenderingServerBackend::%s stub!\n", "light_directional_set_sky_mode");
 };
 
-RID FilamentRenderingServerBackend::shadow_atlas_create()  {
+void FilamentRenderingServerBackend::shadow_atlas_create(RID output)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "shadow_atlas_create");
-	return RID();
 };
 
 void FilamentRenderingServerBackend::shadow_atlas_set_size(RID p_atlas, int p_size, bool p_use_16_bits)  {
@@ -528,9 +525,8 @@ void FilamentRenderingServerBackend::light_projectors_set_filter(RenderingServer
 	printf("FilamentRenderingServerBackend::%s stub!\n", "light_projectors_set_filter");
 };
 
-RID FilamentRenderingServerBackend::reflection_probe_create()  {
+void FilamentRenderingServerBackend::reflection_probe_create(RID output)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "reflection_probe_create");
-	return RID();
 };
 
 void FilamentRenderingServerBackend::reflection_probe_set_update_mode(RID p_probe, RenderingServer::ReflectionProbeUpdateMode p_mode)  {
@@ -589,9 +585,8 @@ void FilamentRenderingServerBackend::reflection_probe_set_mesh_lod_threshold(RID
 	printf("FilamentRenderingServerBackend::%s stub!\n", "reflection_probe_set_mesh_lod_threshold");
 };
 
-RID FilamentRenderingServerBackend::decal_create()  {
+void FilamentRenderingServerBackend::decal_create(RID output)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "decal_create");
-	return RID();
 };
 
 void FilamentRenderingServerBackend::decal_set_size(RID p_decal, const Vector3 & p_size)  {
@@ -634,9 +629,8 @@ void FilamentRenderingServerBackend::decals_set_filter(RenderingServer::DecalFil
 	printf("FilamentRenderingServerBackend::%s stub!\n", "decals_set_filter");
 };
 
-RID FilamentRenderingServerBackend::voxel_gi_create()  {
+void FilamentRenderingServerBackend::voxel_gi_create(RID output)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "voxel_gi_create");
-	return RID();
 };
 
 void FilamentRenderingServerBackend::voxel_gi_allocate_data(RID p_voxel_gi, const Transform3D & p_to_cell_xform, const AABB & p_aabb, const Vector3i & p_octree_size, const Vector<uint8_t> & p_octree_cells, const Vector<uint8_t> & p_data_cells, const Vector<uint8_t> & p_distance_field, const Vector<int> & p_level_counts)  {
@@ -718,9 +712,8 @@ void FilamentRenderingServerBackend::sdfgi_reset()  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "sdfgi_reset");
 };
 
-RID FilamentRenderingServerBackend::lightmap_create()  {
+void FilamentRenderingServerBackend::lightmap_create(RID output)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "lightmap_create");
-	return RID();
 };
 
 void FilamentRenderingServerBackend::lightmap_set_textures(RID p_lightmap, RID p_light, bool p_uses_spherical_haromics)  {
@@ -767,9 +760,8 @@ void FilamentRenderingServerBackend::lightmap_set_probe_capture_update_speed(flo
 	printf("FilamentRenderingServerBackend::%s stub!\n", "lightmap_set_probe_capture_update_speed");
 };
 
-RID FilamentRenderingServerBackend::particles_create()  {
+void FilamentRenderingServerBackend::particles_create(RID output)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "particles_create");
-	return RID();
 };
 
 void FilamentRenderingServerBackend::particles_set_mode(RID p_particles, RenderingServer::ParticlesMode p_mode)  {
@@ -907,9 +899,8 @@ void FilamentRenderingServerBackend::particles_set_interp_to_end(RID p_particles
 	printf("FilamentRenderingServerBackend::%s stub!\n", "particles_set_interp_to_end");
 };
 
-RID FilamentRenderingServerBackend::particles_collision_create()  {
+void FilamentRenderingServerBackend::particles_collision_create(RID output)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "particles_collision_create");
-	return RID();
 };
 
 void FilamentRenderingServerBackend::particles_collision_set_collision_type(RID p_particles_collision, RenderingServer::ParticlesCollisionType p_type)  {
@@ -952,9 +943,8 @@ void FilamentRenderingServerBackend::particles_collision_set_height_field_resolu
 	printf("FilamentRenderingServerBackend::%s stub!\n", "particles_collision_set_height_field_resolution");
 };
 
-RID FilamentRenderingServerBackend::fog_volume_create()  {
+void FilamentRenderingServerBackend::fog_volume_create(RID output)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "fog_volume_create");
-	return RID();
 };
 
 void FilamentRenderingServerBackend::fog_volume_set_shape(RID p_fog_volume, RenderingServer::FogVolumeShape p_shape)  {
@@ -969,9 +959,8 @@ void FilamentRenderingServerBackend::fog_volume_set_material(RID p_fog_volume, R
 	printf("FilamentRenderingServerBackend::%s stub!\n", "fog_volume_set_material");
 };
 
-RID FilamentRenderingServerBackend::visibility_notifier_create()  {
+void FilamentRenderingServerBackend::visibility_notifier_create(RID output)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "visibility_notifier_create");
-	return RID();
 };
 
 void FilamentRenderingServerBackend::visibility_notifier_set_aabb(RID p_notifier, const AABB & p_aabb)  {
@@ -982,18 +971,16 @@ void FilamentRenderingServerBackend::visibility_notifier_set_callbacks(RID p_not
 	printf("FilamentRenderingServerBackend::%s stub!\n", "visibility_notifier_set_callbacks");
 };
 
-RID FilamentRenderingServerBackend::occluder_create()  {
+void FilamentRenderingServerBackend::occluder_create(RID output)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "occluder_create");
-	return RID();
 };
 
 void FilamentRenderingServerBackend::occluder_set_mesh(RID p_occluder, const PackedVector3Array & p_vertices, const PackedInt32Array & p_indices)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "occluder_set_mesh");
 };
 
-RID FilamentRenderingServerBackend::camera_create()  {
+void FilamentRenderingServerBackend::camera_create(RID output)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "camera_create");
-	return RID();
 };
 
 void FilamentRenderingServerBackend::camera_set_perspective(RID p_camera, float p_fovy_degrees, float p_z_near, float p_z_far)  {
@@ -1028,9 +1015,8 @@ void FilamentRenderingServerBackend::camera_set_use_vertical_aspect(RID p_camera
 	printf("FilamentRenderingServerBackend::%s stub!\n", "camera_set_use_vertical_aspect");
 };
 
-RID FilamentRenderingServerBackend::viewport_create()  {
+void FilamentRenderingServerBackend::viewport_create(RID output)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "viewport_create");
-	return RID();
 };
 
 void FilamentRenderingServerBackend::viewport_set_use_xr(RID p_viewport, bool p_use_xr)  {
@@ -1243,9 +1229,8 @@ void FilamentRenderingServerBackend::viewport_set_vrs_texture(RID p_viewport, RI
 	printf("FilamentRenderingServerBackend::%s stub!\n", "viewport_set_vrs_texture");
 };
 
-RID FilamentRenderingServerBackend::sky_create()  {
+void FilamentRenderingServerBackend::sky_create(RID output)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "sky_create");
-	return RID();
 };
 
 void FilamentRenderingServerBackend::sky_set_radiance_size(RID p_sky, int p_radiance_size)  {
@@ -1265,9 +1250,8 @@ Ref<Image> FilamentRenderingServerBackend::sky_bake_panorama(RID p_sky, float p_
 	return Ref<Image>();
 };
 
-RID FilamentRenderingServerBackend::environment_create()  {
+void FilamentRenderingServerBackend::environment_create(RID output)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "environment_create");
-	return RID();
 };
 
 void FilamentRenderingServerBackend::environment_set_background(RID p_env, RenderingServer::EnvironmentBG p_bg)  {
@@ -1391,9 +1375,8 @@ void FilamentRenderingServerBackend::sub_surface_scattering_set_scale(float p_sc
 	printf("FilamentRenderingServerBackend::%s stub!\n", "sub_surface_scattering_set_scale");
 };
 
-RID FilamentRenderingServerBackend::camera_attributes_create()  {
+void FilamentRenderingServerBackend::camera_attributes_create(RID output)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "camera_attributes_create");
-	return RID();
 };
 
 void FilamentRenderingServerBackend::camera_attributes_set_dof_blur_quality(RenderingServer::DOFBlurQuality p_quality, bool p_use_jitter)  {
@@ -1416,9 +1399,8 @@ void FilamentRenderingServerBackend::camera_attributes_set_auto_exposure(RID p_c
 	printf("FilamentRenderingServerBackend::%s stub!\n", "camera_attributes_set_auto_exposure");
 };
 
-RID FilamentRenderingServerBackend::scenario_create()  {
+void FilamentRenderingServerBackend::scenario_create(RID output)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "scenario_create");
-	return RID();
 };
 
 void FilamentRenderingServerBackend::scenario_set_environment(RID p_scenario, RID p_environment)  {
@@ -1433,9 +1415,8 @@ void FilamentRenderingServerBackend::scenario_set_camera_attributes(RID p_scenar
 	printf("FilamentRenderingServerBackend::%s stub!\n", "scenario_set_camera_attributes");
 };
 
-RID FilamentRenderingServerBackend::instance_create()  {
+void FilamentRenderingServerBackend::instance_create(RID output)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "instance_create");
-	return RID();
 };
 
 void FilamentRenderingServerBackend::instance_set_base(RID p_instance, RID p_base)  {
@@ -1564,9 +1545,8 @@ TypedArray<Image> FilamentRenderingServerBackend::bake_render_uv2(RID p_base, co
 	return TypedArray<Image>();
 };
 
-RID FilamentRenderingServerBackend::canvas_create()  {
+void FilamentRenderingServerBackend::canvas_create(RID output)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "canvas_create");
-	return RID();
 };
 
 void FilamentRenderingServerBackend::canvas_set_item_mirroring(RID p_canvas, RID p_item, const Point2 & p_mirroring)  {
@@ -1585,9 +1565,8 @@ void FilamentRenderingServerBackend::canvas_set_disable_scale(bool p_disable)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "canvas_set_disable_scale");
 };
 
-RID FilamentRenderingServerBackend::canvas_texture_create()  {
+void FilamentRenderingServerBackend::canvas_texture_create(RID output)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "canvas_texture_create");
-	return RID();
 };
 
 void FilamentRenderingServerBackend::canvas_texture_set_channel(RID p_canvas_texture, RenderingServer::CanvasTextureChannel p_channel, RID p_texture)  {
@@ -1606,10 +1585,9 @@ void FilamentRenderingServerBackend::canvas_texture_set_texture_repeat(RID p_can
 	printf("FilamentRenderingServerBackend::%s stub!\n", "canvas_texture_set_texture_repeat");
 };
 
-RID FilamentRenderingServerBackend::canvas_item_create()  {
+void FilamentRenderingServerBackend::canvas_item_create(RID output)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "canvas_item_create");
-	return RID();
-};
+}
 
 void FilamentRenderingServerBackend::canvas_item_set_parent(RID p_item, RID p_parent)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "canvas_item_set_parent");
@@ -1796,9 +1774,8 @@ bool FilamentRenderingServerBackend::canvas_item_get_debug_redraw() const {
 	return bool();
 };
 
-RID FilamentRenderingServerBackend::canvas_light_create()  {
+void FilamentRenderingServerBackend::canvas_light_create(RID output)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "canvas_light_create");
-	return RID();
 };
 
 void FilamentRenderingServerBackend::canvas_light_set_mode(RID p_light, RenderingServer::CanvasLightMode p_mode)  {
@@ -1881,9 +1858,8 @@ void FilamentRenderingServerBackend::canvas_light_set_shadow_smooth(RID p_light,
 	printf("FilamentRenderingServerBackend::%s stub!\n", "canvas_light_set_shadow_smooth");
 };
 
-RID FilamentRenderingServerBackend::canvas_light_occluder_create()  {
+void FilamentRenderingServerBackend::canvas_light_occluder_create(RID output)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "canvas_light_occluder_create");
-	return RID();
 };
 
 void FilamentRenderingServerBackend::canvas_light_occluder_attach_to_canvas(RID p_occluder, RID p_canvas)  {
@@ -1910,9 +1886,8 @@ void FilamentRenderingServerBackend::canvas_light_occluder_set_light_mask(RID p_
 	printf("FilamentRenderingServerBackend::%s stub!\n", "canvas_light_occluder_set_light_mask");
 };
 
-RID FilamentRenderingServerBackend::canvas_occluder_polygon_create()  {
+void FilamentRenderingServerBackend::canvas_occluder_polygon_create(RID output)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "canvas_occluder_polygon_create");
-	return RID();
 };
 
 void FilamentRenderingServerBackend::canvas_occluder_polygon_set_shape(RID p_occluder_polygon, const Vector<Vector2> & p_shape, bool p_closed)  {
@@ -1967,7 +1942,7 @@ void FilamentRenderingServerBackend::global_shader_parameters_clear()  {
 };
 
 void FilamentRenderingServerBackend::free(RID p_rid)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "free");
+	m_objectManager.free(p_rid);
 };
 
 void FilamentRenderingServerBackend::request_frame_drawn_callback(const Callable & p_callable)  {
@@ -1985,10 +1960,6 @@ void FilamentRenderingServerBackend::sync()  {
 bool FilamentRenderingServerBackend::has_changed() const {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "has_changed");
 	return bool();
-};
-
-void FilamentRenderingServerBackend::finish()  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "finish");
 };
 
 uint64_t FilamentRenderingServerBackend::get_rendering_info(RenderingServer::RenderingInfo p_info)  {

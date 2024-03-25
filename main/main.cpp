@@ -323,7 +323,18 @@ void finalize_physics() {
 
 void finalize_display() {
 	rendering_server->finish();
+#ifdef FILAMENT_ENABLED
+	if(rendering_server != FilamentRenderingServer::filament_server_instance()) {
+		/*
+		 * The Filament rendering server is destroyed as a part of the display
+		 * server shutdown, so it doesn't need to be deleted here.
+		 */
+		memdelete(rendering_server);
+	}
+#else
 	memdelete(rendering_server);
+#endif
+
 
 	memdelete(display_server);
 }

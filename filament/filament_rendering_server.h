@@ -508,7 +508,9 @@ public:
 		return Registerer::instance();
 	}
 
-	static filament::Engine *filamentEngine();
+	static inline filament::Engine *filamentEngine() {
+		return FilamentRenderingServerBackend::filamentEngine();
+	}
 
 protected:
 	inline FilamentRenderingServerBackend *backend() const {

@@ -51,6 +51,7 @@ public:
 	BaseThreadedExecutionQueueBackend &operator =(const BaseThreadedExecutionQueueBackend &other) = delete;
 
 	virtual void runStepOnThread() = 0;
+	virtual void shutdown() = 0;
 };
 
 class BaseThreadedExecutionQueue {
@@ -71,6 +72,8 @@ protected:
 	void enqueue(std::function<void()> &&function);
 
 	BaseThreadedExecutionQueueBackend *m_backend;
+
+	void flush();
 
 private:
 	class BackendRegistration {
@@ -98,6 +101,9 @@ private:
 	std::condition_variable m_initializationCondvar;
 	std::atomic_bool m_shutdown;
 	atomic_queue::AtomicQueue2<std::function<void()>, 512> m_queue;
+	std::condition_variable m_jobCondvar;
+	std::mutex m_jobWaitMutex;
+	unsigned int m_jobWakeupTokens;
 };
 
 template<typename Backend>
@@ -121,6 +127,8 @@ protected:
 			static_cast<ResultType (BaseThreadedExecutionQueueBackend::*)(Args... args)>(pointer),
 			m_backend, args...), result);
 
+		BaseThreadedExecutionQueue::flush();
+
 		return result.finish();
 	}
 
@@ -138,6 +146,8 @@ protected:
 		const_cast<ThreadedExecutionQueue<Backend> *>(this)->invoke<ResultType>(std::bind(
 			static_cast<ResultType (BaseThreadedExecutionQueueBackend::*)(Args... args) const>(pointer),
 			m_backend, args...), result);
+
+		const_cast<ThreadedExecutionQueue<Backend> *>(this)->BaseThreadedExecutionQueue::flush();
 
 		return result.finish();
 	}
