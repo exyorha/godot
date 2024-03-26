@@ -13,6 +13,7 @@ namespace filament {
 }
 
 class FilamentWindow;
+class FilamentTextureObject;
 
 class FilamentRenderingServerBackend final : public BaseThreadedExecutionQueueBackend {
 public:
@@ -21,9 +22,6 @@ public:
 
 	FilamentRenderingServerBackend(const FilamentRenderingServerBackend &other) = delete;
 	FilamentRenderingServerBackend &operator =(const FilamentRenderingServerBackend &other) = delete;
-
-	void runStepOnThread() override;
-	void shutdown() override;
 
 	void texture_2d_create(RID output, const Ref<Image> & p_image) ;
 	void texture_2d_layered_create(RID output, const Vector<Ref<Image>> & p_layers, RenderingServer::TextureLayeredType p_layered_type) ;
@@ -483,7 +481,7 @@ public:
 	void free(RID p_rid) ;
 	void request_frame_drawn_callback(const Callable & p_callable) ;
 	void draw(bool p_swap_buffers, double frame_step) ;
-	void sync() ;
+	bool sync() ;
 	bool has_changed() const;
 	uint64_t get_rendering_info(RenderingServer::RenderingInfo p_info) ;
 	String get_video_adapter_name() const;
@@ -518,6 +516,9 @@ public:
 	}
 
 private:
+
+	void upload3DTexture(const std::shared_ptr<FilamentTextureObject> &texture, const Vector<Ref<Image>> & p_data);
+
 	class EnginePointer {
 	public:
 		EnginePointer(filament::Engine *engine = nullptr, filament::Engine **pointerToPointer = nullptr) noexcept;

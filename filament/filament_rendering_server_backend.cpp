@@ -1,5 +1,8 @@
 #include "filament_rendering_server_backend.h"
 #include "filament/filament_window.h"
+#include "filament/filament_texture_object.h"
+#include "filament/filament_proxy_texture_object.h"
+#include "filament/filament_texture_format.h"
 
 #include <cstdio>
 #include <stdexcept>
@@ -32,59 +35,203 @@ FilamentRenderingServerBackend::EnginePointer::~EnginePointer() {
 	}
 }
 
-void FilamentRenderingServerBackend::runStepOnThread() {
-	bool hadAnyWindows = false;
+void FilamentRenderingServerBackend::texture_2d_create(RID output, const Ref<Image> & p_image) {
 
-	for(const auto &windowPtr: m_windows) {
-		auto window = windowPtr.get();
-		if(window) {
-			window->renderWindow();
+	if(!p_image.is_valid()) {
+		fprintf(stderr, "FilamentRenderingServerBackend::texture_2d_create: not a valid texture image");
+		return;
+	}
+	FilamentTextureFormat internalFormat(p_image->get_format());
 
-			hadAnyWindows = true;
-		}
+	if(!internalFormat.isSupported(*filamentEngine())) {
+		p_image->decompress();
+
+		internalFormat = FilamentTextureFormat(p_image->get_format());
 	}
 
-	if(!hadAnyWindows) {
-		/*
-		* If we don't have any windows active, sleep a bit to not burn the CPU
-		* in a tight loop. Otherwise, the window renderers will pace the loop.
-		*/
+	auto texture = std::make_shared<FilamentTextureObject>(
+		filament::Texture::Sampler::SAMPLER_2D, internalFormat, p_image->get_width(), p_image->get_height(), 1, p_image->has_mipmaps());
 
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
-	}
-}
+	m_objectManager.associate(output, texture);
 
-void FilamentRenderingServerBackend::shutdown() {
-	m_windows.clear();
-	m_objectManager.clear();
-}
-
-void FilamentRenderingServerBackend::texture_2d_create(RID output, const Ref<Image> & p_image)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "texture_2d_create");
+	texture->uploadMipChain(*filamentEngine(), 0, p_image);
 };
 
 void FilamentRenderingServerBackend::texture_2d_layered_create(RID output, const Vector<Ref<Image>> & p_layers, RenderingServer::TextureLayeredType p_layered_type)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "texture_2d_layered_create");
-};
+	filament::Texture::Sampler type;
+
+	switch(p_layered_type) {
+		case RenderingServer::TextureLayeredType::TEXTURE_LAYERED_2D_ARRAY:
+			type = filament::Texture::Sampler::SAMPLER_2D_ARRAY;
+			break;
+
+		case RenderingServer::TextureLayeredType::TEXTURE_LAYERED_CUBEMAP:
+			type = filament::Texture::Sampler::SAMPLER_CUBEMAP;
+			break;
+
+		case RenderingServer::TextureLayeredType::TEXTURE_LAYERED_CUBEMAP_ARRAY:
+			type = filament::Texture::Sampler::SAMPLER_CUBEMAP_ARRAY;
+			break;
+
+		default:
+			throw std::logic_error("unsupported layered texture type");
+	}
+
+	if(p_layers.is_empty()) {
+		fprintf(stderr, "FilamentRenderingServerBackend::texture_2d_layered_create: a layered texture must have at least one layer\n");
+		return;
+	}
+
+	const auto &firstImage = p_layers[0];
+	uint32_t width = firstImage->get_width();
+	uint32_t height = firstImage->get_height();
+	bool hasMipmaps = firstImage->has_mipmaps();
+	bool decompressing = false;
+
+	FilamentTextureFormat internalFormat(firstImage->get_format());
+
+	if(!internalFormat.isSupported(*filamentEngine())) {
+		decompressing = true;
+
+		firstImage->decompress();
+
+		internalFormat = FilamentTextureFormat(firstImage->get_format());
+	}
+
+	for(int32_t index = 1, count = p_layers.size(); index < count; index++) {
+		const auto &image = p_layers[index];
+
+		if(decompressing) {
+			image->decompress();
+		}
+
+		FilamentTextureFormat imageInternalFormat(image->get_format());
+
+		if(image->get_width() != width || image->get_height() != height || image->has_mipmaps() != hasMipmaps || imageInternalFormat != internalFormat) {
+			fprintf(stderr, "FilamentRenderingServerBackend::texture_2d_layered_create: all images of a layered texture must have same dimensions, format, and mipmap count");
+			return;
+		}
+	}
+
+	uint32_t depth = p_layers.size();
+	if(type == filament::Texture::Sampler::SAMPLER_CUBEMAP) {
+		if(depth != 6) {
+			fprintf(stderr, "FilamentRenderingServerBackend::texture_2d_layered_create: a cubemap must have exactly 6 layers");
+			return;
+		}
+
+		depth = 1;
+	} else if(type == filament::Texture::Sampler::SAMPLER_CUBEMAP_ARRAY) {
+		if((depth % 6) != 0) {
+			fprintf(stderr, "FilamentRenderingServerBackend::texture_2d_layered_create: a cubemap array must have a multiple of 6 layers");
+			return;
+		}
+
+		depth /= 6;
+	}
+
+	auto texture = std::make_shared<FilamentTextureObject>(type, internalFormat, width, height, depth, hasMipmaps);
+	m_objectManager.associate(output, texture);
+
+	for(int32_t index = 0, count = p_layers.size(); index < count; index++) {
+		texture->uploadMipChain(*filamentEngine(), index, p_layers[index]);
+	}
+}
 
 void FilamentRenderingServerBackend::texture_3d_create(RID output, Image::Format anonarg, int p_width, int p_height, int p_depth, bool p_mipmaps, const Vector<Ref<Image>> & p_data)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "texture_3d_create");
+
+	FilamentTextureFormat internalFormat(anonarg);
+
+	if(!internalFormat.isSupported(*filamentEngine())) {
+		internalFormat = FilamentTextureFormat(Image::FORMAT_RGBA8);
+	}
+
+	auto texture = std::make_shared<FilamentTextureObject>(filament::Texture::Sampler::SAMPLER_3D, internalFormat, p_width, p_height, p_depth, p_mipmaps);
+	m_objectManager.associate(output, texture);
+
+	upload3DTexture(texture, p_data);
+}
+
+void FilamentRenderingServerBackend::upload3DTexture(const std::shared_ptr<FilamentTextureObject> &texture, const Vector<Ref<Image>> & p_data) {
+
+	auto filamentTexture = texture->texture();
+
+	uint32_t actualMipMaps = filamentTexture->getLevels();
+
+	uint32_t expectedNumberOfLayers = 0;
+	for(uint32_t mipLevel = 0; mipLevel < actualMipMaps; mipLevel++) {
+		expectedNumberOfLayers += filamentTexture->getDepth(mipLevel);
+	}
+
+	if(expectedNumberOfLayers != p_data.size()) {
+		fprintf(stderr, "FilamentRenderingServerBackend::texture_3d_create: the number of layers passed don't match the expected value\n");
+		return;
+	}
+
+	bool decompressing = false;
+
+
+	uint32_t currentInputLayer = 0;
+	for(uint32_t mipLevel = 0; mipLevel < actualMipMaps; mipLevel++) {
+		auto mipWidth = filamentTexture->getWidth(mipLevel);
+		auto mipHeight = filamentTexture->getHeight(mipLevel);
+		auto mipDepth = filamentTexture->getDepth(mipLevel);
+
+		for(uint32_t slice = 0; slice < mipDepth; slice++) {
+			const auto &image = p_data[currentInputLayer];
+			currentInputLayer++;
+
+			FilamentTextureFormat imageInternalFormat;
+			if(!decompressing) {
+				imageInternalFormat = FilamentTextureFormat(image->get_format());
+
+				if(imageInternalFormat.format() != filamentTexture->getFormat()) {
+					decompressing = true;
+				}
+			}
+
+			if(decompressing) {
+				image->decompress();
+				image->convert(Image::FORMAT_RGBA8);
+				imageInternalFormat = FilamentTextureFormat(image->get_format());
+			}
+
+			if(image->get_width() != mipWidth || image->get_height() != mipHeight || filamentTexture->getFormat() != imageInternalFormat.format()) {
+				fprintf(stderr, "FilamentRenderingServerBackend::upload3DTexture: one of the layers passed is inconsistent with the expected format or dimensions\n");
+				return;
+			}
+
+			texture->uploadDepthSlice(*filamentEngine(), mipLevel, slice, image);
+		}
+	}
 };
 
 void FilamentRenderingServerBackend::texture_proxy_create(RID output, RID p_base)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "texture_proxy_create");
+	auto proxy = std::make_shared<FilamentProxyTextureObject>();
+	m_objectManager.associate(output, proxy);
+
+	proxy->setTarget(m_objectManager.resolve<FilamentTextureObject>(p_base));
 };
 
 void FilamentRenderingServerBackend::texture_2d_update(RID p_texture, const Ref<Image> & p_image, int p_layer)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "texture_2d_update");
-};
+	auto texture = m_objectManager.resolve<FilamentTextureObject>(p_texture);
+	if(texture) {
+		texture->uploadMipChain(*filamentEngine(), p_layer, p_image);
+	}
+}
 
 void FilamentRenderingServerBackend::texture_3d_update(RID p_texture, const Vector<Ref<Image>> & p_data)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "texture_3d_update");
-};
+	auto texture = m_objectManager.resolve<FilamentTextureObject>(p_texture);
+	if(texture) {
+		upload3DTexture(texture, p_data);
+	}
+}
 
 void FilamentRenderingServerBackend::texture_proxy_update(RID p_texture, RID p_proxy_to)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "texture_proxy_update");
+	auto proxy = m_objectManager.resolve<FilamentProxyTextureObject>(p_texture);
+	if(proxy) {
+		proxy->setTarget(m_objectManager.resolve<FilamentTextureObject>(p_proxy_to));
+	}
 };
 
 void FilamentRenderingServerBackend::texture_2d_placeholder_create(RID output)  {
@@ -1950,11 +2097,23 @@ void FilamentRenderingServerBackend::request_frame_drawn_callback(const Callable
 };
 
 void FilamentRenderingServerBackend::draw(bool p_swap_buffers, double frame_step)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "draw");
+
+	for(const auto &windowPtr: m_windows) {
+		auto window = windowPtr.get();
+		if(window) {
+			window->renderWindow();
+		}
+	}
 };
 
-void FilamentRenderingServerBackend::sync()  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "sync");
+bool FilamentRenderingServerBackend::sync()  {
+	filamentEngine()->flush();
+
+	/*
+	 * This is a dummy function with a non-null return, and the call of it is
+	 * enough to fully synchronize.
+	 */
+	return false;
 };
 
 bool FilamentRenderingServerBackend::has_changed() const {

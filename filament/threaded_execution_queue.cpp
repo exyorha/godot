@@ -58,8 +58,6 @@ void BaseThreadedExecutionQueue::queueThread(BackendFactoryFunction factory) {
 
 		//m_backend->runStepOnThread();
 	}
-
-	m_backend->shutdown();
 }
 
 void BaseThreadedExecutionQueue::enqueue(std::function<void()> &&function) {

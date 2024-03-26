@@ -2027,11 +2027,19 @@ void FilamentRenderingServer::draw(bool p_swap_buffers, double frame_step)  {
 };
 
 void FilamentRenderingServer::sync()  {
-	return execute<void>(&FilamentRenderingServerBackend::sync);
+	/*
+	 * Dummy return to make the call synchronous.
+	 */
+	execute<bool>(&FilamentRenderingServerBackend::sync);
 };
 
 bool FilamentRenderingServer::has_changed() const {
-	return execute<bool>(&FilamentRenderingServerBackend::has_changed);
+	/*
+	 * This controls whether the main loop with draw a new frame, or only
+	 * call sync(). Currently, we always request a frame, but this needs
+	 * revision later.
+	 */
+	return true;//return execute<bool>(&FilamentRenderingServerBackend::has_changed);
 };
 
 void FilamentRenderingServer::finish()  {

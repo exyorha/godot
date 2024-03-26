@@ -48,10 +48,14 @@ sources = [
     "filament_engine_object.cpp",
     "filament_object.cpp",
     "filament_object_manager.cpp",
+    "filament_proxy_texture_object.cpp",
     "filament_rendering_server.cpp",
     "filament_rendering_server.h",
     "filament_rendering_server_backend.cpp",
     "filament_rendering_server_backend.h",
+    "filament_texture_format.cpp",
+    "filament_texture_object.cpp",
+    "filament_texture_reference_object.cpp",
     "filament_window.cpp",
     "threaded_execution_queue.cpp"
 ]

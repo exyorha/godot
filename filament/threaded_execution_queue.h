@@ -49,9 +49,6 @@ public:
 
 	BaseThreadedExecutionQueueBackend(const BaseThreadedExecutionQueueBackend &other) = delete;
 	BaseThreadedExecutionQueueBackend &operator =(const BaseThreadedExecutionQueueBackend &other) = delete;
-
-	virtual void runStepOnThread() = 0;
-	virtual void shutdown() = 0;
 };
 
 class BaseThreadedExecutionQueue {
