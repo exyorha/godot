@@ -1,8 +1,21 @@
 #include "filament_rendering_server_backend.h"
+#include "filament/LightManager.h"
+#include "filament/filament_viewport_object.h"
 #include "filament/filament_window.h"
 #include "filament/filament_texture_object.h"
 #include "filament/filament_proxy_texture_object.h"
 #include "filament/filament_texture_format.h"
+#include "filament/filament_scenario_object.h"
+#include "filament/filament_instance.h"
+#include "filament/filament_camera.h"
+#include "filament/filament_renderable_base.h"
+#include "filament/filament_mesh.h"
+#include "filament/filament_shader_object.h"
+#include "filament/filament_material_object.h"
+#include "filament/filament_rendering_server.h"
+#include "filament/filament_light_object.h"
+
+#include "servers/display_server.h"
 
 #include <cstdio>
 #include <stdexcept>
@@ -318,7 +331,7 @@ uint64_t FilamentRenderingServerBackend::texture_get_native_handle(RID p_texture
 };
 
 void FilamentRenderingServerBackend::shader_create(RID output)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "shader_create");
+	m_objectManager.associate(output, std::make_shared<FilamentShaderObject>());
 };
 
 void FilamentRenderingServerBackend::shader_set_code(RID p_shader, const String & p_code)  {
@@ -358,12 +371,15 @@ RenderingServer::ShaderNativeSourceCode FilamentRenderingServerBackend::shader_g
 };
 
 void FilamentRenderingServerBackend::material_create(RID output)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "material_create");
+	m_objectManager.associate(output, std::make_shared<FilamentMaterialObject>());
 };
 
 void FilamentRenderingServerBackend::material_set_shader(RID p_shader_material, RID p_shader)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "material_set_shader");
-};
+	auto material = m_objectManager.resolve<FilamentMaterialObject>(p_shader_material);
+	if(material) {
+		material->setShader(m_objectManager.resolve<FilamentShaderObject>(p_shader));
+	}
+}
 
 void FilamentRenderingServerBackend::material_set_param(RID p_material, const StringName & p_param, const Variant & p_value)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "material_set_param");
@@ -383,24 +399,46 @@ void FilamentRenderingServerBackend::material_set_next_pass(RID p_material, RID 
 };
 
 void FilamentRenderingServerBackend::mesh_create_from_surfaces(RID output, const Vector<RenderingServer::SurfaceData> & p_surfaces, int p_blend_shape_count)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "mesh_create_from_surfaces");
+
+	auto mesh = std::make_shared<FilamentMesh>();
+	m_objectManager.associate(output, mesh);
+
+	printf("!! mesh_create_from_surfaces %p, %d surfaces\n", mesh.get(), p_surfaces.size());
+
+	mesh->reserveSurfaces(p_surfaces.size());
+	mesh->setBlendShapeCount(p_blend_shape_count);
+
+	for(const auto &surface: p_surfaces) {
+		mesh->addSurface(surface);
+	}
 };
 
 void FilamentRenderingServerBackend::mesh_create(RID output)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "mesh_create");
+	m_objectManager.associate(output, std::make_shared<FilamentMesh>());
 };
 
 void FilamentRenderingServerBackend::mesh_set_blend_shape_count(RID p_mesh, int p_blend_shape_count)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "mesh_set_blend_shape_count");
-};
+	auto mesh = m_objectManager.resolve<FilamentMesh>(p_mesh);
+	if(mesh) {
+		mesh->setBlendShapeCount(p_blend_shape_count);
+	}
+
+}
 
 void FilamentRenderingServerBackend::mesh_add_surface(RID p_mesh, const RenderingServer::SurfaceData & p_surface)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "mesh_add_surface");
+	auto mesh = m_objectManager.resolve<FilamentMesh>(p_mesh);
+	if(mesh) {
+		mesh->addSurface(p_surface);
+	}
 };
 
 int FilamentRenderingServerBackend::mesh_get_blend_shape_count(RID p_mesh) const {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "mesh_get_blend_shape_count");
-	return int();
+	auto mesh = m_objectManager.resolve<FilamentMesh>(p_mesh);
+	if(mesh) {
+		return mesh->blendShapeCount();
+	}
+
+	return 0;
 };
 
 void FilamentRenderingServerBackend::mesh_set_blend_shape_mode(RID p_mesh, RenderingServer::BlendShapeMode p_mode)  {
@@ -425,7 +463,10 @@ void FilamentRenderingServerBackend::mesh_surface_update_skin_region(RID p_mesh,
 };
 
 void FilamentRenderingServerBackend::mesh_surface_set_material(RID p_mesh, int p_surface, RID p_material)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "mesh_surface_set_material");
+	auto mesh = m_objectManager.resolve<FilamentMesh>(p_mesh);
+	if(mesh) {
+		mesh->setSurfaceMaterial(p_surface, m_objectManager.resolve<FilamentMaterialObject>(p_material));
+	}
 };
 
 RID FilamentRenderingServerBackend::mesh_surface_get_material(RID p_mesh, int p_surface) const {
@@ -439,9 +480,13 @@ RenderingServer::SurfaceData FilamentRenderingServerBackend::mesh_get_surface(RI
 };
 
 int FilamentRenderingServerBackend::mesh_get_surface_count(RID p_mesh) const {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "mesh_get_surface_count");
-	return int();
-};
+	auto mesh = m_objectManager.resolve<FilamentMesh>(p_mesh);
+	if(mesh) {
+		return mesh->surfaceCount();
+	}
+
+	return 0;
+}
 
 void FilamentRenderingServerBackend::mesh_set_custom_aabb(RID p_mesh, const AABB & p_aabb)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "mesh_set_custom_aabb");
@@ -457,8 +502,11 @@ void FilamentRenderingServerBackend::mesh_set_shadow_mesh(RID p_mesh, RID p_shad
 };
 
 void FilamentRenderingServerBackend::mesh_clear(RID p_mesh)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "mesh_clear");
-};
+	auto mesh = m_objectManager.resolve<FilamentMesh>(p_mesh);
+	if(mesh) {
+		mesh->clear();
+	}
+}
 
 void FilamentRenderingServerBackend::multimesh_create(RID output)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "multimesh_create");
@@ -577,20 +625,23 @@ void FilamentRenderingServerBackend::skeleton_set_base_transform_2d(RID p_skelet
 };
 
 void FilamentRenderingServerBackend::directional_light_create(RID output)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "directional_light_create");
+	m_objectManager.associate(output, std::make_shared<FilamentLightObject>(filament::LightManager::Type::DIRECTIONAL));
 };
 
 void FilamentRenderingServerBackend::omni_light_create(RID output)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "omni_light_create");
+	m_objectManager.associate(output, std::make_shared<FilamentLightObject>(filament::LightManager::Type::POINT));
 };
 
 void FilamentRenderingServerBackend::spot_light_create(RID output)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "spot_light_create");
+	m_objectManager.associate(output, std::make_shared<FilamentLightObject>(filament::LightManager::Type::SPOT));
 };
 
 void FilamentRenderingServerBackend::light_set_color(RID p_light, const Color & p_color)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "light_set_color");
-};
+	auto light = m_objectManager.resolve<FilamentLightObject>(p_light);
+	if(light) {
+		light->setColor(p_color);
+	}
+}
 
 void FilamentRenderingServerBackend::light_set_param(RID p_light, RenderingServer::LightParam p_param, float p_value)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "light_set_param");
@@ -1127,7 +1178,7 @@ void FilamentRenderingServerBackend::occluder_set_mesh(RID p_occluder, const Pac
 };
 
 void FilamentRenderingServerBackend::camera_create(RID output)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "camera_create");
+	m_objectManager.associate(output, std::make_shared<FilamentCamera>());
 };
 
 void FilamentRenderingServerBackend::camera_set_perspective(RID p_camera, float p_fovy_degrees, float p_z_near, float p_z_far)  {
@@ -1143,8 +1194,11 @@ void FilamentRenderingServerBackend::camera_set_frustum(RID p_camera, float p_si
 };
 
 void FilamentRenderingServerBackend::camera_set_transform(RID p_camera, const Transform3D & p_transform)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "camera_set_transform");
-};
+	auto camera = m_objectManager.resolve<FilamentCamera>(p_camera);
+	if(camera) {
+		camera->setTransform(p_transform);
+	}
+}
 
 void FilamentRenderingServerBackend::camera_set_cull_mask(RID p_camera, uint32_t p_layers)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "camera_set_cull_mask");
@@ -1163,7 +1217,7 @@ void FilamentRenderingServerBackend::camera_set_use_vertical_aspect(RID p_camera
 };
 
 void FilamentRenderingServerBackend::viewport_create(RID output)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "viewport_create");
+	m_objectManager.associate(output, std::make_shared<FilamentViewportObject>());
 };
 
 void FilamentRenderingServerBackend::viewport_set_use_xr(RID p_viewport, bool p_use_xr)  {
@@ -1187,8 +1241,17 @@ void FilamentRenderingServerBackend::viewport_set_canvas_cull_mask(RID p_viewpor
 };
 
 void FilamentRenderingServerBackend::viewport_attach_to_screen(RID p_viewport, const Rect2 & p_rect, DisplayServer::WindowID p_screen)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "viewport_attach_to_screen");
-};
+	auto viewport = m_objectManager.resolve<FilamentViewportObject>(p_viewport);
+	if(viewport) {
+		FilamentWindow *window = nullptr;
+
+		if(p_screen >= 0 && p_screen < m_windows.size()) {
+			window = m_windows[p_screen].get();
+		}
+
+		viewport->setWindow(window, p_rect);
+	}
+}
 
 void FilamentRenderingServerBackend::viewport_set_render_direct_to_screen(RID p_viewport, bool p_enable)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "viewport_set_render_direct_to_screen");
@@ -1241,12 +1304,18 @@ void FilamentRenderingServerBackend::viewport_set_disable_2d(RID p_viewport, boo
 };
 
 void FilamentRenderingServerBackend::viewport_attach_camera(RID p_viewport, RID p_camera)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "viewport_attach_camera");
+	auto viewport = m_objectManager.resolve<FilamentViewportObject>(p_viewport);
+	if(viewport) {
+		viewport->setCamera(m_objectManager.resolve<FilamentCamera>(p_camera));
+	}
 };
 
 void FilamentRenderingServerBackend::viewport_set_scenario(RID p_viewport, RID p_scenario)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "viewport_set_scenario");
-};
+	auto viewport = m_objectManager.resolve<FilamentViewportObject>(p_viewport);
+	if(viewport) {
+		viewport->setScenario(m_objectManager.resolve<FilamentScenarioObject>(p_scenario));
+	}
+}
 
 void FilamentRenderingServerBackend::viewport_attach_canvas(RID p_viewport, RID p_canvas)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "viewport_attach_canvas");
@@ -1547,8 +1616,8 @@ void FilamentRenderingServerBackend::camera_attributes_set_auto_exposure(RID p_c
 };
 
 void FilamentRenderingServerBackend::scenario_create(RID output)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "scenario_create");
-};
+	m_objectManager.associate(output, std::make_shared<FilamentScenarioObject>());
+}
 
 void FilamentRenderingServerBackend::scenario_set_environment(RID p_scenario, RID p_environment)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "scenario_set_environment");
@@ -1563,16 +1632,22 @@ void FilamentRenderingServerBackend::scenario_set_camera_attributes(RID p_scenar
 };
 
 void FilamentRenderingServerBackend::instance_create(RID output)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "instance_create");
+	m_objectManager.associate(output, std::make_shared<FilamentInstance>());
 };
 
 void FilamentRenderingServerBackend::instance_set_base(RID p_instance, RID p_base)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "instance_set_base");
+	auto instance = m_objectManager.resolve<FilamentInstance>(p_instance);
+	if(instance) {
+		instance->setBase(m_objectManager.resolve<FilamentRenderableBase>(p_base));
+	}
 };
 
 void FilamentRenderingServerBackend::instance_set_scenario(RID p_instance, RID p_scenario)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "instance_set_scenario");
-};
+	auto instance = m_objectManager.resolve<FilamentInstance>(p_instance);
+	if(instance) {
+		instance->setScenario(m_objectManager.resolve<FilamentScenarioObject>(p_scenario));
+	}
+}
 
 void FilamentRenderingServerBackend::instance_set_layer_mask(RID p_instance, uint32_t p_mask)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "instance_set_layer_mask");
@@ -1583,8 +1658,11 @@ void FilamentRenderingServerBackend::instance_set_pivot_data(RID p_instance, flo
 };
 
 void FilamentRenderingServerBackend::instance_set_transform(RID p_instance, const Transform3D & p_transform)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "instance_set_transform");
-};
+	auto instance = m_objectManager.resolve<FilamentInstance>(p_instance);
+	if(instance) {
+		instance->setTransform(p_transform);
+	}
+}
 
 void FilamentRenderingServerBackend::instance_attach_object_instance_id(RID p_instance, ObjectID p_id)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "instance_attach_object_instance_id");
@@ -1599,7 +1677,10 @@ void FilamentRenderingServerBackend::instance_set_surface_override_material(RID 
 };
 
 void FilamentRenderingServerBackend::instance_set_visible(RID p_instance, bool p_visible)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "instance_set_visible");
+	auto instance = m_objectManager.resolve<FilamentInstance>(p_instance);
+	if(instance) {
+		instance->setVisible(p_visible);
+	}
 };
 
 void FilamentRenderingServerBackend::instance_set_custom_aabb(RID p_instance, AABB aabb)  {
@@ -2250,4 +2331,8 @@ void FilamentRenderingServerBackend::window_destroy(DisplayServer::WindowID p_wi
 	}
 
 	m_windows[p_window_id].reset();
+}
+
+FilamentRenderingServerBackend *FilamentRenderingServerBackend::get() {
+	return FilamentRenderingServer::filament_server_instance()->backend();
 }

@@ -515,6 +515,12 @@ public:
 		return m_filamentEngine;
 	}
 
+	static FilamentRenderingServerBackend *get();
+
+	inline const FilamentObjectManager &objects() const {
+		return m_objectManager;
+	}
+
 private:
 
 	void upload3DTexture(const std::shared_ptr<FilamentTextureObject> &texture, const Vector<Ref<Image>> & p_data);

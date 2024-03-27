@@ -11,4 +11,11 @@ void FilamentEngineObjectReleaser<T>::release(T *ptr) {
 template class FilamentEngineObjectReleaser<filament::SwapChain>;
 template class FilamentEngineObjectReleaser<filament::Renderer>;
 template class FilamentEngineObjectReleaser<filament::Texture>;
+template class FilamentEngineObjectReleaser<filament::View>;
+template class FilamentEngineObjectReleaser<filament::Scene>;
+template class FilamentEngineObjectReleaser<filament::VertexBuffer>;
+template class FilamentEngineObjectReleaser<filament::IndexBuffer>;
+template class FilamentEngineObjectReleaser<filament::Material>;
+template class FilamentEngineObjectReleaser<filament::MaterialInstance>;
+
 

@@ -9,27 +9,27 @@ public:
 	static void release(T *ptr);
 };
 
-template<class T>
-class FilamentEngineObject {
+template<class T, class Releaser>
+class FilamentEngineObjectBase {
 public:
-	explicit inline FilamentEngineObject(T *ptr = nullptr) noexcept : m_ptr(ptr) {
+	explicit inline FilamentEngineObjectBase(T *ptr = nullptr) noexcept : m_ptr(ptr) {
 
 	}
 
-	~FilamentEngineObject() {
+	~FilamentEngineObjectBase() {
 		FilamentEngineObjectReleaser<T>::release(m_ptr);
 	}
 
-	inline FilamentEngineObject(const FilamentEngineObject &other) = delete;
-	inline FilamentEngineObject &operator =(const FilamentEngineObject &other) = delete;
+	inline FilamentEngineObjectBase(const FilamentEngineObjectBase &other) = delete;
+	inline FilamentEngineObjectBase &operator =(const FilamentEngineObjectBase &other) = delete;
 
-	inline FilamentEngineObject(FilamentEngineObject &&other) noexcept :FilamentEngineObject() {
+	inline FilamentEngineObjectBase(FilamentEngineObjectBase &&other) noexcept :FilamentEngineObjectBase() {
 		*this = std::move(other);
 	}
 
-	FilamentEngineObject &operator =(FilamentEngineObject &&other) noexcept {
+	FilamentEngineObjectBase &operator =(FilamentEngineObjectBase &&other) noexcept {
 		if(this != &other) {
-			FilamentEngineObjectReleaser<T>::release(m_ptr);
+			Releaser::release(m_ptr);
 
 			m_ptr = other.m_ptr;
 			other.m_ptr = nullptr;
@@ -57,5 +57,7 @@ public:
 private:
 	T *m_ptr;
 };
+
+template<typename T> using FilamentEngineObject = FilamentEngineObjectBase<T, FilamentEngineObjectReleaser<T>>;
 
 #endif

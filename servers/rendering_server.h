@@ -1644,6 +1644,9 @@ public:
 	void fix_surface_compatibility(SurfaceData &p_surface, const String &p_path = "");
 #endif
 
+	static void _get_axis_angle(const Vector3 &p_normal, const Vector4 &p_tangent, float &r_angle, Vector3 &r_axis);
+	static void _get_tbn_from_axis_angle(const Vector3 &p_axis, float p_angle, Vector3 &r_normal, Vector4 &r_tangent);
+
 private:
 	// Binder helpers
 	RID _texture_2d_layered_create(const TypedArray<Image> &p_layers, TextureLayeredType p_layered_type);

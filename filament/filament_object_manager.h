@@ -28,10 +28,10 @@ public:
 	static RID allocate();
 
 	template<typename T>
-	auto resolve(RID rid) -> typename std::enable_if<std::is_base_of_v<FilamentObject, T>, std::shared_ptr<T>>::type;
+	auto resolve(RID rid) const -> typename std::enable_if<std::is_base_of_v<FilamentObject, T>, std::shared_ptr<T>>::type;
 
 	template<>
-	std::shared_ptr<FilamentObject> resolve<FilamentObject>(RID rid);
+	std::shared_ptr<FilamentObject> resolve<FilamentObject>(RID rid) const;
 
 private:
 	static void badRIDCast(RID rid, const std::type_info &requiredType, const std::type_info &passedType);
@@ -41,7 +41,7 @@ private:
 };
 
 template<typename T>
-auto FilamentObjectManager::resolve(RID rid) -> typename std::enable_if<std::is_base_of_v<FilamentObject, T>, std::shared_ptr<T>>::type {
+auto FilamentObjectManager::resolve(RID rid) const -> typename std::enable_if<std::is_base_of_v<FilamentObject, T>, std::shared_ptr<T>>::type {
 	auto base = resolve<FilamentObject>(rid);
 	if(!base) {
 		return nullptr;

@@ -27,6 +27,7 @@ res = subprocess.run([
     "-DCMAKE_EXPORT_COMPILE_COMMANDS=TRUE",
     "-DFILAMENT_SKIP_SAMPLES=TRUE",
     "-DFILAMENT_SKIP_SDL2=TRUE",
+    "-DFILAMENT_SUPPORTS_VULKAN=FALSE",
     "-S", filament_srcdir,
     "-B", filament_builddir
 ])
@@ -45,17 +46,29 @@ res = subprocess.run(buildcmd)
 res.check_returncode()
 
 sources = [
+    "filament_camera.cpp",
     "filament_engine_object.cpp",
+    "filament_entity_object.cpp",
+    "filament_instance.cpp",
+    "filament_light_object.cpp",
+    "filament_material_object.cpp",
+    "filament_mesh.cpp",
+    "filament_mesh_surface.cpp",
     "filament_object.cpp",
     "filament_object_manager.cpp",
     "filament_proxy_texture_object.cpp",
+    "filament_renderable_base.cpp",
     "filament_rendering_server.cpp",
     "filament_rendering_server.h",
     "filament_rendering_server_backend.cpp",
     "filament_rendering_server_backend.h",
+    "filament_scenario_object.cpp",
+    "filament_shader_object.cpp",
     "filament_texture_format.cpp",
     "filament_texture_object.cpp",
     "filament_texture_reference_object.cpp",
+    "filament_vertex_format.cpp",
+    "filament_viewport_object.cpp",
     "filament_window.cpp",
     "threaded_execution_queue.cpp"
 ]
@@ -66,7 +79,9 @@ env_filament.Prepend(CPPPATH=[
     "#filament/%s/filament/backend/include" % filament_srcdir,
     "#filament/%s/filament/include" % filament_srcdir,
     "#filament/%s/libs/utils/include" % filament_srcdir,
-    "#filament/%s/libs/math/include" % filament_srcdir
+    "#filament/%s/libs/math/include" % filament_srcdir,
+    "#filament/%s/libs/filabridge/include" % filament_srcdir,
+    "#filament/%s/libs/geometry/include" % filament_srcdir
 ])
 
 lib = env_filament.add_library("filamentserver", sources)
@@ -81,6 +96,7 @@ env.Prepend(
         "#filament/%s/libs/filaflat" % filament_builddir,
         "#filament/%s/libs/filabridge" % filament_builddir,
         "#filament/%s/libs/ibl" % filament_builddir,
+        "#filament/%s/libs/geometry" % filament_builddir,
         "#filament/%s/third_party/smol-v/tnt" % filament_builddir
     ],
     LIBS = [
@@ -93,6 +109,7 @@ env.Prepend(
         "bluevk",
         "filaflat",
         "filabridge",
+        "geometry",
         "ibl",
         "smol-v",
         "c++"

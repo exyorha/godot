@@ -512,7 +512,6 @@ public:
 		return FilamentRenderingServerBackend::filamentEngine();
 	}
 
-protected:
 	inline FilamentRenderingServerBackend *backend() const {
 		return static_cast<FilamentRenderingServerBackend *>(m_backend);
 	}

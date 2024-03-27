@@ -322,7 +322,7 @@ RID RenderingServer::get_white_texture() {
 	return white_texture;
 }
 
-void _get_axis_angle(const Vector3 &p_normal, const Vector4 &p_tangent, float &r_angle, Vector3 &r_axis) {
+void RenderingServer::_get_axis_angle(const Vector3 &p_normal, const Vector4 &p_tangent, float &r_angle, Vector3 &r_axis) {
 	Vector3 normal = p_normal.normalized();
 	Vector3 tangent = Vector3(p_tangent.x, p_tangent.y, p_tangent.z).normalized();
 	float d = p_tangent.w;
@@ -345,7 +345,7 @@ void _get_axis_angle(const Vector3 &p_normal, const Vector4 &p_tangent, float &r
 
 // The inputs to this function should match the outputs of _get_axis_angle. I.e. p_axis is a normalized vector
 // and p_angle includes the binormal direction.
-void _get_tbn_from_axis_angle(const Vector3 &p_axis, float p_angle, Vector3 &r_normal, Vector4 &r_tangent) {
+void RenderingServer::_get_tbn_from_axis_angle(const Vector3 &p_axis, float p_angle, Vector3 &r_normal, Vector4 &r_tangent) {
 	float binormal_sign = p_angle > 0.5 ? 1.0 : -1.0;
 	float angle = Math::abs(p_angle * 2.0 - 1.0) * Math_PI;
 

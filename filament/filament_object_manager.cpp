@@ -45,7 +45,7 @@ void FilamentObjectManager::associate(RID rid, const std::shared_ptr<FilamentObj
 }
 
 template<>
-std::shared_ptr<FilamentObject> FilamentObjectManager::resolve<FilamentObject>(RID rid) {
+std::shared_ptr<FilamentObject> FilamentObjectManager::resolve<FilamentObject>(RID rid) const {
 	if(rid.is_null()) {
 		return nullptr;
 	}
