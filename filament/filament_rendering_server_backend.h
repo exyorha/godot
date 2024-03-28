@@ -4,6 +4,7 @@
 #include "servers/rendering_server.h"
 #include "threaded_execution_queue.h"
 #include "filament_object_manager.h"
+#include "filament_dirty_list.h"
 
 #include <vector>
 #include <memory>
@@ -521,6 +522,10 @@ public:
 		return m_objectManager;
 	}
 
+	inline void markDirty(FilamentDirtyListEntry *entry) noexcept {
+		m_dirtyList.add(entry);
+	}
+
 private:
 
 	void upload3DTexture(const std::shared_ptr<FilamentTextureObject> &texture, const Vector<Ref<Image>> & p_data);
@@ -548,6 +553,7 @@ private:
 
 	EnginePointer m_engine;
 	FilamentObjectManager m_objectManager;
+	FilamentDirtyList m_dirtyList;
 	std::vector<std::unique_ptr<FilamentWindow>> m_windows;
 	static filament::Engine *m_filamentEngine;
 };

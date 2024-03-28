@@ -3,20 +3,45 @@
 
 #include <filament/MaterialInstance.h>
 
-#include <cstdio>
+FilamentMaterialObject::FilamentMaterialObject() : m_shader(this) {
 
-FilamentMaterialObject::FilamentMaterialObject() = default;
+}
 
 FilamentMaterialObject::~FilamentMaterialObject() = default;
 
+void FilamentMaterialObject::resetMaterialInstance() {
+
+	if(m_material) {
+		objectAboutToInvalidate();
+		m_material = FilamentEngineObject<filament::MaterialInstance>();
+	}
+
+	markDirty();
+}
+
 void FilamentMaterialObject::setShader(const std::shared_ptr<FilamentShaderObject> &shader) {
-	m_material = FilamentEngineObject<filament::MaterialInstance>();
+	resetMaterialInstance();
 
 	m_shader = shader;
+}
 
-	printf("FilamentMaterialObject(%p): setting shader to %p\n", this, shader.get());
+filament::MaterialInstance *FilamentMaterialObject::materialInstance() {
+	clean();
 
-	if(shader) {
-		m_material = shader->instantiate();
+	return m_material.get();
+}
+
+void FilamentMaterialObject::doClean() {
+	if(m_shader) {
+		m_material = m_shader->instantiate();
+		m_material->setCullingMode(filament::MaterialInstance::CullingMode::FRONT);
+	}
+}
+
+void FilamentMaterialObject::controlledObjectAboutToInvalidate(FilamentControlledObjectReferenceBase *linkedViaReference) {
+	FilamentObject::controlledObjectAboutToInvalidate(linkedViaReference);
+
+	if(linkedViaReference == &m_shader) {
+		resetMaterialInstance();
 	}
 }

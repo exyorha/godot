@@ -24,6 +24,7 @@ public:
 
 	struct Buffer {
 		size_t position;
+		uint8_t interleavedBufferStride;
 	};
 
 
@@ -82,7 +83,7 @@ public:
 		const AABB &aabb) const;
 
 private:
-	Attribute &addAttributeToBuffer(std::optional<size_t> &buffer, filament::VertexAttribute attribute, filament::VertexBuffer::AttributeType attributeType, bool normalized);
+	Attribute &addAttributeToBuffer(std::optional<size_t> &buffer, filament::VertexAttribute attribute, filament::VertexBuffer::AttributeType attributeType, bool normalized, bool interleaved = false);
 
 	static bool godotFormatHasNormals(uint64_t format);
 

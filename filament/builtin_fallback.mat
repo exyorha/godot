@@ -1,15 +1,14 @@
 material {
 	name : "Built-in fallback lit material",
-	shadingModel : unlit,
-	blending : opaque,
-	requires: [ tangents ]
+	shadingModel : lit,
+	blending : opaque
 }
 
 fragment {
     void material(inout MaterialInputs material) {
         prepareMaterial(material);
 
-        material.baseColor = vec4((getWorldGeometricNormalVector() + 1.0) * 0.5, 1.0);
+        material.baseColor = vec4(vec3(0.8), 1.0);
 	}
 }
 

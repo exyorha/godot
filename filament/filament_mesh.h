@@ -15,8 +15,8 @@ public:
 	FilamentMesh();
 	~FilamentMesh();
 
-	void constructInstance(const utils::Entity &entity) override;
-	filament::RenderableManager::Builder buildSingleInstanceOfMesh() const;
+	void constructInstance(const utils::Entity &entity, filament::SkinningBuffer *skinWith) override;
+	filament::RenderableManager::Builder buildSingleInstanceOfMesh(filament::SkinningBuffer *skinWith) const;
 
 	void clear();
 

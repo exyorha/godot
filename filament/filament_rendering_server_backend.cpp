@@ -14,6 +14,7 @@
 #include "filament/filament_material_object.h"
 #include "filament/filament_rendering_server.h"
 #include "filament/filament_light_object.h"
+#include "filament/filament_skeleton_object.h"
 
 #include "servers/display_server.h"
 
@@ -590,24 +591,39 @@ int FilamentRenderingServerBackend::multimesh_get_visible_instances(RID p_multim
 };
 
 void FilamentRenderingServerBackend::skeleton_create(RID output)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "skeleton_create");
+	m_objectManager.associate(output, std::make_shared<FilamentSkeletonObject>());
 };
 
 void FilamentRenderingServerBackend::skeleton_allocate_data(RID p_skeleton, int p_bones, bool p_2d_skeleton)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "skeleton_allocate_data");
+	auto skeleton = m_objectManager.resolve<FilamentSkeletonObject>(p_skeleton);
+	if(skeleton) {
+		skeleton->allocate(p_bones);
+	}
 };
 
 int FilamentRenderingServerBackend::skeleton_get_bone_count(RID p_skeleton) const {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "skeleton_get_bone_count");
-	return int();
+	auto skeleton = m_objectManager.resolve<FilamentSkeletonObject>(p_skeleton);
+	if(skeleton) {
+		return skeleton->boneCount();
+	}
+
+	return 0;
 };
 
 void FilamentRenderingServerBackend::skeleton_bone_set_transform(RID p_skeleton, int p_bone, const Transform3D & p_transform)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "skeleton_bone_set_transform");
+	auto skeleton = m_objectManager.resolve<FilamentSkeletonObject>(p_skeleton);
+	if(skeleton) {
+		skeleton->setTransform(p_bone, p_transform);
+	}
 };
 
 Transform3D FilamentRenderingServerBackend::skeleton_bone_get_transform(RID p_skeleton, int p_bone) const {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "skeleton_bone_get_transform");
+	auto skeleton = m_objectManager.resolve<FilamentSkeletonObject>(p_skeleton);
+
+	if(skeleton) {
+		return skeleton->getTransform(p_bone);
+	}
+
 	return Transform3D();
 };
 
@@ -644,7 +660,7 @@ void FilamentRenderingServerBackend::light_set_color(RID p_light, const Color & 
 }
 
 void FilamentRenderingServerBackend::light_set_param(RID p_light, RenderingServer::LightParam p_param, float p_value)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "light_set_param");
+	printf("FilamentRenderingServerBackend::%s stgub!\n", "light_set_param");
 };
 
 void FilamentRenderingServerBackend::light_set_shadow(RID p_light, bool p_enabled)  {
@@ -1182,15 +1198,24 @@ void FilamentRenderingServerBackend::camera_create(RID output)  {
 };
 
 void FilamentRenderingServerBackend::camera_set_perspective(RID p_camera, float p_fovy_degrees, float p_z_near, float p_z_far)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "camera_set_perspective");
-};
+	auto camera = m_objectManager.resolve<FilamentCamera>(p_camera);
+	if(camera) {
+		camera->setPerspective(p_fovy_degrees, p_z_near, p_z_far);
+	}
+}
 
 void FilamentRenderingServerBackend::camera_set_orthogonal(RID p_camera, float p_size, float p_z_near, float p_z_far)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "camera_set_orthogonal");
+	auto camera = m_objectManager.resolve<FilamentCamera>(p_camera);
+	if(camera) {
+		camera->setOrthogonal(p_size, p_z_near, p_z_far);
+	}
 };
 
 void FilamentRenderingServerBackend::camera_set_frustum(RID p_camera, float p_size, Vector2 p_offset, float p_z_near, float p_z_far)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "camera_set_frustum");
+	auto camera = m_objectManager.resolve<FilamentCamera>(p_camera);
+	if(camera) {
+		camera->setFrustum(p_size, p_offset, p_z_near, p_z_far);
+	}
 };
 
 void FilamentRenderingServerBackend::camera_set_transform(RID p_camera, const Transform3D & p_transform)  {
@@ -1213,7 +1238,10 @@ void FilamentRenderingServerBackend::camera_set_camera_attributes(RID p_camera, 
 };
 
 void FilamentRenderingServerBackend::camera_set_use_vertical_aspect(RID p_camera, bool p_enable)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "camera_set_use_vertical_aspect");
+	auto camera = m_objectManager.resolve<FilamentCamera>(p_camera);
+	if(camera) {
+		camera->setUseVerticalAspect(p_enable);
+	}
 };
 
 void FilamentRenderingServerBackend::viewport_create(RID output)  {
@@ -1688,7 +1716,10 @@ void FilamentRenderingServerBackend::instance_set_custom_aabb(RID p_instance, AA
 };
 
 void FilamentRenderingServerBackend::instance_attach_skeleton(RID p_instance, RID p_skeleton)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "instance_attach_skeleton");
+	auto instance = m_objectManager.resolve<FilamentInstance>(p_instance);
+	if(instance) {
+		instance->setSkeleton(m_objectManager.resolve<FilamentSkeletonObject>(p_skeleton));
+	}
 };
 
 void FilamentRenderingServerBackend::instance_set_extra_visibility_margin(RID p_instance, real_t p_margin)  {
@@ -2178,6 +2209,7 @@ void FilamentRenderingServerBackend::request_frame_drawn_callback(const Callable
 };
 
 void FilamentRenderingServerBackend::draw(bool p_swap_buffers, double frame_step)  {
+	m_dirtyList.clean();
 
 	for(const auto &windowPtr: m_windows) {
 		auto window = windowPtr.get();
@@ -2188,6 +2220,7 @@ void FilamentRenderingServerBackend::draw(bool p_swap_buffers, double frame_step
 };
 
 bool FilamentRenderingServerBackend::sync()  {
+	m_dirtyList.clean();
 	filamentEngine()->flush();
 
 	/*

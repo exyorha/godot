@@ -7,6 +7,10 @@ namespace utils {
 	class Entity;
 }
 
+namespace filament {
+	class SkinningBuffer;
+}
+
 class FilamentRenderableBase : public FilamentObject {
 protected:
 	FilamentRenderableBase();
@@ -14,7 +18,7 @@ protected:
 public:
 	~FilamentRenderableBase() override;
 
-	virtual void constructInstance(const utils::Entity &entity) = 0;
+	virtual void constructInstance(const utils::Entity &entity, filament::SkinningBuffer *skinWith) = 0;
 };
 
 #endif

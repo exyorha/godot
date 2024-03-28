@@ -50,6 +50,7 @@ void FilamentViewportObject::render(filament::Renderer *renderer) {
 	filament::Camera *camera = nullptr;
 
 	if(cameraObject) {
+		cameraObject->configureForViewport(m_view->getViewport());
 		camera = cameraObject->camera();
 	}
 

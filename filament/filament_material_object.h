@@ -4,6 +4,7 @@
 #include "filament_object.h"
 
 #include "filament/filament_engine_object.h"
+#include "filament/filament_controlled_object_reference.h"
 
 namespace filament {
 	class MaterialInstance;
@@ -18,12 +19,16 @@ public:
 
 	void setShader(const std::shared_ptr<FilamentShaderObject> &shader);
 
-	inline filament::MaterialInstance *materialInstance() const {
-		return m_material.get();
-	}
+	filament::MaterialInstance *materialInstance();
+
+protected:
+	void doClean() override;
+	void controlledObjectAboutToInvalidate(FilamentControlledObjectReferenceBase *linkedViaReference) override;
 
 private:
-	std::shared_ptr<FilamentShaderObject> m_shader;
+	void resetMaterialInstance();
+
+	FilamentControlledObjectReference<FilamentShaderObject> m_shader;
 	FilamentEngineObject<filament::MaterialInstance> m_material;
 };
 

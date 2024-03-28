@@ -17,5 +17,4 @@ template class FilamentEngineObjectReleaser<filament::VertexBuffer>;
 template class FilamentEngineObjectReleaser<filament::IndexBuffer>;
 template class FilamentEngineObjectReleaser<filament::Material>;
 template class FilamentEngineObjectReleaser<filament::MaterialInstance>;
-
-
+template class FilamentEngineObjectReleaser<filament::SkinningBuffer>;

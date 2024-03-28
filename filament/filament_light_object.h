@@ -12,7 +12,7 @@ public:
 	explicit FilamentLightObject(filament::LightManager::Type type);
 	~FilamentLightObject();
 
-	void constructInstance(const utils::Entity &entity) override;
+	void constructInstance(const utils::Entity &entity, filament::SkinningBuffer *skinWith) override;
 
 	void setColor(const Color &color);
 

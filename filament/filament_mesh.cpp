@@ -2,6 +2,7 @@
 #include "filament/filament_rendering_server_backend.h"
 
 #include <filament/RenderableManager.h>
+#include <filament/SkinningBuffer.h>
 
 #include <utils/Entity.h>
 
@@ -14,15 +15,19 @@ FilamentMesh::FilamentMesh() : m_blendShapeCount(0) {
 FilamentMesh::~FilamentMesh() = default;
 
 void FilamentMesh::clear() {
+	objectAboutToInvalidate();
+
 	m_surfaces.clear();
 }
 
 void FilamentMesh::addSurface(const RenderingServer::SurfaceData &data) {
+	objectAboutToInvalidate();
+
 	m_surfaces.emplace_back(data);
 }
 
-void FilamentMesh::constructInstance(const utils::Entity &entity) {
-	auto builder = buildSingleInstanceOfMesh();
+void FilamentMesh::constructInstance(const utils::Entity &entity, filament::SkinningBuffer *skinWith) {
+	auto builder = buildSingleInstanceOfMesh(skinWith);
 
 	auto result = builder.build(*FilamentRenderingServerBackend::filamentEngine(), entity);
 	if(result != decltype(result)::Success) {
@@ -31,7 +36,7 @@ void FilamentMesh::constructInstance(const utils::Entity &entity) {
 }
 
 
-filament::RenderableManager::Builder FilamentMesh::buildSingleInstanceOfMesh() const {
+filament::RenderableManager::Builder FilamentMesh::buildSingleInstanceOfMesh(filament::SkinningBuffer *skinWith) const {
 	filament::RenderableManager::Builder builder(m_surfaces.size());
 
 	filament::Box compositeBoundingBox;
@@ -46,7 +51,10 @@ filament::RenderableManager::Builder FilamentMesh::buildSingleInstanceOfMesh() c
 
 	builder.boundingBox(compositeBoundingBox);
 
-	builder.culling(false);
+	if(skinWith) {
+		builder.enableSkinningBuffers();
+		builder.skinning(skinWith, skinWith->getBoneCount(), 0);
+	}
 
 	return builder;
 }

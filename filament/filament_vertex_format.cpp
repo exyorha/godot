@@ -3,12 +3,14 @@
 #include "core/variant/variant.h"
 #include "filament/MaterialEnums.h"
 #include "filament/VertexBuffer.h"
+#include "filament/filament_rendering_server.h"
 #include "servers/rendering_server.h"
 
 #include <geometry/Transcoder.h>
 #include <geometry/SurfaceOrientation.h>
 
 #include <memory>
+#include <cinttypes>
 
 FilamentVertexFormat::FilamentVertexFormat(uint64_t format, size_t numberOfVertices) : m_godotFormat(format), m_numberOfVertices(numberOfVertices) {
 	/*
@@ -16,6 +18,29 @@ FilamentVertexFormat::FilamentVertexFormat(uint64_t format, size_t numberOfVerti
 	 * transcodeVertexDataForFilament, and are not used directly. See that
 	 * function for details.
 	 */
+
+	uint32_t offsets[RenderingServer::ARRAY_MAX];
+
+	uint32_t vertexElementSize, normalElementSize, attribElementSize, skinElementSize;
+
+	FilamentRenderingServer::filament_server_instance()->mesh_surface_make_offsets_from_format(
+		m_godotFormat,
+		numberOfVertices,
+		1 /* doesn't matter, just to suppress the error */,
+		offsets,
+		vertexElementSize,
+		normalElementSize,
+		attribElementSize,
+		skinElementSize);
+
+	printf(
+		"FilamentVertexFormat: Godot's idea of the vertex format 0x%016" PRIx64 " with %zu vertices:\n"
+		"  vertex element size: %u, normal element size: %u, attrib element size: %u, skin element size: %u\n", format, numberOfVertices,
+		vertexElementSize, normalElementSize, attribElementSize, skinElementSize);
+
+	for(int index = 0; index <RenderingServer::ARRAY_MAX; index++) {
+		printf("  attribute %d: offset %u\n", index, offsets[index]);
+	}
 
 	if(format & RenderingServer::ARRAY_FORMAT_VERTEX) {
 		if(format & RenderingServer::ARRAY_FLAG_USE_2D_VERTICES) {
@@ -84,11 +109,18 @@ FilamentVertexFormat::FilamentVertexFormat(uint64_t format, size_t numberOfVerti
 	}
 
 	if(format & RenderingServer::ARRAY_FORMAT_BONES) {
-		addAttributeToBuffer(m_skinDataBuffer, filament::VertexAttribute::BONE_INDICES, filament::VertexBuffer::AttributeType::USHORT4, false);
+		addAttributeToBuffer(m_skinDataBuffer, filament::VertexAttribute::BONE_INDICES, filament::VertexBuffer::AttributeType::USHORT4, false, true);
 	}
 
 	if(format & RenderingServer::ARRAY_FORMAT_WEIGHTS) {
-		addAttributeToBuffer(m_skinDataBuffer, filament::VertexAttribute::BONE_WEIGHTS, filament::VertexBuffer::AttributeType::USHORT4, true);
+		addAttributeToBuffer(m_skinDataBuffer, filament::VertexAttribute::BONE_WEIGHTS, filament::VertexBuffer::AttributeType::USHORT4, true, true);
+	}
+
+	for(auto &attribute:m_attributes) {
+		auto stride = m_buffers.at(attribute.bufferIndex).interleavedBufferStride;
+		if(stride != 0) {
+			attribute.stride = stride;
+		}
 	}
 }
 
@@ -228,7 +260,7 @@ void FilamentVertexFormat::transcodeVertexDataForFilament(const Vector<uint8_t> 
 		PackedFloat32Array godotNormals;
 		godotNormals.resize(normalAttribute->componentCount * m_numberOfVertices);
 
-		filament::geometry::Transcoder transcoder(*vertexAttribute);
+		filament::geometry::Transcoder transcoder(*normalAttribute);
 		transcoder(godotNormals.ptrw(), godotFormattedData.ptr() + normalOffset, m_numberOfVertices);
 
 		/*
@@ -349,7 +381,7 @@ filament::VertexBuffer::AttributeType FilamentVertexFormat::convertCustomFormat(
 }
 
 auto FilamentVertexFormat::addAttributeToBuffer(std::optional<size_t> &buffer, filament::VertexAttribute attribute, filament::VertexBuffer::AttributeType attributeType,
-												bool normalized) -> Attribute & {
+												bool normalized, bool interleaved) -> Attribute & {
 
 	Buffer *bufferDesc;
 	if(buffer.has_value()) {
@@ -358,17 +390,23 @@ auto FilamentVertexFormat::addAttributeToBuffer(std::optional<size_t> &buffer, f
 		buffer.emplace(m_buffers.size());
 		bufferDesc = &m_buffers.emplace_back();
 		bufferDesc->position = 0;
+		bufferDesc->interleavedBufferStride = 0;
 	}
 
 	auto &attributeDesc = m_attributes.emplace_back();
 	attributeDesc.bufferIndex = *buffer;
 	attributeDesc.attribute = attribute;
 	attributeDesc.attributeType = attributeType;
-	attributeDesc.offset = bufferDesc->position;
 	attributeDesc.stride = lengthForAttributeType(attributeType);
 	attributeDesc.normalized = normalized;
 
-	bufferDesc->position += attributeDesc.stride * m_numberOfVertices;
+	if(interleaved) {
+		attributeDesc.offset = bufferDesc->interleavedBufferStride;
+		bufferDesc->interleavedBufferStride += attributeDesc.stride;
+	} else {
+		attributeDesc.offset = bufferDesc->position;
+		bufferDesc->position += attributeDesc.stride * m_numberOfVertices;
+	}
 
 	return attributeDesc;
 }

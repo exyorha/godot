@@ -9,6 +9,7 @@ namespace filament {
 
 class FilamentRenderableBase;
 class FilamentScenarioObject;
+class FilamentSkeletonObject;
 
 class FilamentInstance final : public FilamentEntityObject {
 public:
@@ -16,6 +17,8 @@ public:
 	~FilamentInstance();
 
 	void setBase(const std::shared_ptr<FilamentRenderableBase> &base);
+
+	void setSkeleton(const std::shared_ptr<FilamentSkeletonObject> &skeleton);
 
 	void setScenario(const std::shared_ptr<FilamentScenarioObject> &scenario);
 
@@ -25,10 +28,15 @@ public:
 
 	void setVisible(bool visible);
 
-private:
-	void applyVisible();
+protected:
+	void doClean() override;
+	void controlledObjectAboutToInvalidate(FilamentControlledObjectReferenceBase *linkedViaReference) override;
 
-	std::weak_ptr<FilamentRenderableBase> m_associatedBase;
+private:
+	void purgeInstance();
+
+	FilamentControlledObjectReference<FilamentRenderableBase> m_associatedBase;
+	FilamentControlledObjectReference<FilamentSkeletonObject> m_skeleton;
 	filament::Scene *m_associatedScene;
 	bool m_visible;
 };
