@@ -23,7 +23,7 @@ void FilamentMesh::clear() {
 void FilamentMesh::addSurface(const RenderingServer::SurfaceData &data) {
 	objectAboutToInvalidate();
 
-	m_surfaces.emplace_back(data);
+	m_surfaces.emplace_back(static_cast<FilamentControlledObjectReferenceOwner *>(this), data);
 }
 
 void FilamentMesh::constructInstance(const utils::Entity &entity, filament::SkinningBuffer *skinWith) {
@@ -67,4 +67,10 @@ void FilamentMesh::setSurfaceMaterial(size_t index, const std::shared_ptr<Filame
 	}
 
 	m_surfaces[index].setMaterial(material);
+}
+
+void FilamentMesh::controlledObjectAboutToInvalidate(FilamentControlledObjectReferenceBase *linkedViaReference) {
+	FilamentRenderableBase::controlledObjectAboutToInvalidate(linkedViaReference);
+
+	objectAboutToInvalidate();
 }

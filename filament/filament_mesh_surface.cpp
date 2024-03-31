@@ -1,17 +1,18 @@
 
 #include "filament/filament_mesh_surface.h"
-#include "filament/filament_rendering_server.h"
 #include "filament/filament_rendering_server_backend.h"
 #include "filament/filament_vertex_format.h"
 #include "filament/filament_material_object.h"
+#include "filament/filament_upload_helpers.h"
 
 #include "servers/rendering_server.h"
 
 #include <filament/IndexBuffer.h>
 #include <filament/VertexBuffer.h>
 
-FilamentMeshSurface::FilamentMeshSurface(const RenderingServer::SurfaceData &data) :
-	m_primitiveType(mapPrimitiveType(data.primitive)) {
+FilamentMeshSurface::FilamentMeshSurface(FilamentControlledObjectReferenceOwner *owner, const RenderingServer::SurfaceData &data) :
+	m_primitiveType(mapPrimitiveType(data.primitive)),
+	m_constructedFromMaterial(owner) {
 
 	/*
 	 * TODO: maybe implement LODs? They currently are not in Filament at all
@@ -35,7 +36,7 @@ FilamentMeshSurface::FilamentMeshSurface(const RenderingServer::SurfaceData &dat
 			throw std::bad_alloc();
 		}
 
-		m_indexBuffer->setBuffer(engine, makeBufferDescriptor(data.index_data));
+		m_indexBuffer->setBuffer(engine, makeFilamentDescriptor(data.index_data));
 	}
 
 	FilamentVertexFormat vertexFormat(data.format, data.vertex_count);
@@ -61,21 +62,21 @@ FilamentMeshSurface::FilamentMeshSurface(const RenderingServer::SurfaceData &dat
 			vertexFormat.transcodeVertexDataForFilament(data.vertex_data, positionData, tangentData, data.aabb);
 
 			if(positionData.has_value()) {
-				m_vertexBuffer->setBufferAt(engine, vertexFormat.positionDataBuffer(), makeBufferDescriptor(*positionData));
+				m_vertexBuffer->setBufferAt(engine, vertexFormat.positionDataBuffer(), makeFilamentDescriptor(*positionData));
 			}
 
 			if(tangentData.has_value()) {
-				m_vertexBuffer->setBufferAt(engine, vertexFormat.tangentDataBuffer(), makeBufferDescriptor(*tangentData));
+				m_vertexBuffer->setBufferAt(engine, vertexFormat.tangentDataBuffer(), makeFilamentDescriptor(*tangentData));
 			}
 		}
 
 
 		if(vertexFormat.hasAttributeDataBuffer()) {
-			m_vertexBuffer->setBufferAt(engine, vertexFormat.attributeDataBuffer(), makeBufferDescriptor(data.attribute_data));
+			m_vertexBuffer->setBufferAt(engine, vertexFormat.attributeDataBuffer(), makeFilamentDescriptor(data.attribute_data));
 		}
 
 		if(vertexFormat.hasSkinDataBuffer()) {
-			m_vertexBuffer->setBufferAt(engine, vertexFormat.skinDataBuffer(), makeBufferDescriptor(data.skin_data));
+			m_vertexBuffer->setBufferAt(engine, vertexFormat.skinDataBuffer(), makeFilamentDescriptor(data.skin_data));
 		}
 
 	}
@@ -91,21 +92,6 @@ FilamentMeshSurface::~FilamentMeshSurface() = default;
 FilamentMeshSurface::FilamentMeshSurface(FilamentMeshSurface &&other) noexcept = default;
 
 FilamentMeshSurface &FilamentMeshSurface::operator =(FilamentMeshSurface &&other) noexcept = default;
-
-filament::backend::BufferDescriptor FilamentMeshSurface::makeBufferDescriptor(const Vector<uint8_t> &data) {
-	auto vectorCopy = std::make_unique<Vector<uint8_t>>(data);
-
-	/*
-	 * BufferDescriptor constructor is noexcept.
-	 */
-	auto rawVectorCopy = vectorCopy.release();
-	return filament::backend::BufferDescriptor(rawVectorCopy->ptr(), rawVectorCopy->size(), nullptr, bufferDescriptorCallback, rawVectorCopy);
-}
-
-void FilamentMeshSurface::bufferDescriptorCallback(void* buffer, size_t size, void* user) {
-	delete static_cast<Vector<uint8_t> *>(user);
-}
-
 
 filament::RenderableManager::PrimitiveType FilamentMeshSurface::mapPrimitiveType(RenderingServer::PrimitiveType in) {
 	switch(in) {
@@ -137,9 +123,24 @@ void FilamentMeshSurface::build(filament::RenderableManager::Builder &builder, s
 		m_indexBuffer.get()
 	);
 
+	filament::MaterialInstance *instance = nullptr;
+
 	if(m_material) {
-		auto instance = m_material->materialInstance();
-		printf("!! FilamentMeshSurface::bild: setting surface %zu material to %p\n", primitiveIndexInBuilder, instance);
+		instance = m_material->materialInstance();
+		if(instance) {
+			m_constructedFromMaterial = m_material;
+		}
+	}
+
+	if(!instance) {
+		auto defaultMaterial = FilamentRenderingServerBackend::get()->default3DMaterial();
+		instance = defaultMaterial->materialInstance();
+		if(instance) {
+			m_constructedFromMaterial = defaultMaterial;
+		}
+	}
+
+	if(instance) {
 		builder.material(primitiveIndexInBuilder, instance);
 	}
 }

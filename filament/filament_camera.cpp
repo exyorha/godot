@@ -9,7 +9,6 @@ FilamentCamera::FilamentCamera() : m_camera(FilamentRenderingServerBackend::fila
 		throw std::bad_alloc();
 	}
 
-	m_camera->setProjection(75.0f, 4.0/3.0, 0.1, 10000.0);
 	m_camera->setExposure(1.0f);
 }
 

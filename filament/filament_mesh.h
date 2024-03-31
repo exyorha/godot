@@ -40,6 +40,9 @@ public:
 
 	void setSurfaceMaterial(size_t index, const std::shared_ptr<FilamentMaterialObject> &material);
 
+protected:
+	void controlledObjectAboutToInvalidate(FilamentControlledObjectReferenceBase *linkedViaReference) override;
+
 private:
 	std::vector<FilamentMeshSurface> m_surfaces;
 	size_t m_blendShapeCount;

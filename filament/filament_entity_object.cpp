@@ -29,3 +29,17 @@ void FilamentEntityObject::setTransform(const Transform3D &transform) {
 		transformManager.setTransform(instance, filamentTransformFromGodotTransform(transform));
 	}
 }
+
+void FilamentEntityObject::setParent(const std::shared_ptr<FilamentEntityObject> &parentEntity) {
+	auto &transformManager = FilamentRenderingServerBackend::filamentEngine()->getTransformManager();
+
+	auto instance = transformManager.getInstance(m_entity);
+	if(instance) {
+		filament::TransformManager::Instance parentInstance;
+		if(parentEntity) {
+			parentInstance = transformManager.getInstance(parentEntity->entity());
+		}
+
+		transformManager.setParent(instance, parentInstance);
+	}
+}

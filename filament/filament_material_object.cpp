@@ -34,7 +34,6 @@ filament::MaterialInstance *FilamentMaterialObject::materialInstance() {
 void FilamentMaterialObject::doClean() {
 	if(m_shader) {
 		m_material = m_shader->instantiate();
-		m_material->setCullingMode(filament::MaterialInstance::CullingMode::FRONT);
 	}
 }
 

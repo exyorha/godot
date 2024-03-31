@@ -4,18 +4,15 @@
 #include "servers/rendering_server.h"
 
 #include "filament/filament_engine_object.h"
+#include "filament/filament_controlled_object_reference.h"
 
 #include <filament/RenderableManager.h>
-
-namespace filament::backend {
-	class BufferDescriptor;
-}
 
 class FilamentMaterialObject;
 
 class FilamentMeshSurface {
 public:
-	explicit FilamentMeshSurface(const RenderingServer::SurfaceData &data);
+	FilamentMeshSurface(FilamentControlledObjectReferenceOwner *owner, const RenderingServer::SurfaceData &data);
 	~FilamentMeshSurface();
 
 	FilamentMeshSurface(const FilamentMeshSurface &other) = delete;
@@ -35,14 +32,12 @@ public:
 private:
 	static filament::RenderableManager::PrimitiveType mapPrimitiveType(RenderingServer::PrimitiveType in);
 
-	static filament::backend::BufferDescriptor makeBufferDescriptor(const Vector<uint8_t> &data);
-	static void bufferDescriptorCallback(void* buffer, size_t size, void* user);
-
 	FilamentEngineObject<filament::VertexBuffer> m_vertexBuffer;
 	FilamentEngineObject<filament::IndexBuffer> m_indexBuffer;
 	filament::RenderableManager::PrimitiveType m_primitiveType;
 	filament::Box m_boundingBox;
 	std::shared_ptr<FilamentMaterialObject> m_material;
+	mutable FilamentControlledObjectReference<FilamentMaterialObject> m_constructedFromMaterial;
 };
 
 #endif

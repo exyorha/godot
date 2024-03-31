@@ -20,6 +20,9 @@ public:
 
 	void setTransform(const Transform3D &transform);
 
+protected:
+	void setParent(const std::shared_ptr<FilamentEntityObject> &parentEntity);
+
 private:
 	utils::Entity m_entity;
 };

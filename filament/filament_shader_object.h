@@ -10,12 +10,16 @@ namespace filament {
 	class MaterialInstance;
 }
 
+class String;
+
 class FilamentShaderObject final : public FilamentObject {
 public:
 	FilamentShaderObject();
 	~FilamentShaderObject() override;
 
 	FilamentEngineObject<filament::MaterialInstance> instantiate(const char *name = nullptr) const;
+
+	void createBuiltin(const unsigned char *filamentMaterialData, size_t size);
 
 private:
 	FilamentEngineObject<filament::Material> m_material;

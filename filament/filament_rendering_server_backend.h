@@ -15,6 +15,8 @@ namespace filament {
 
 class FilamentWindow;
 class FilamentTextureObject;
+class FilamentShaderObject;
+class FilamentMaterialObject;
 
 class FilamentRenderingServerBackend final : public BaseThreadedExecutionQueueBackend {
 public:
@@ -526,6 +528,19 @@ public:
 		m_dirtyList.add(entry);
 	}
 
+	inline const std::shared_ptr<FilamentShaderObject> &default3DShader() const {
+		return m_default3DShader;
+	}
+
+	inline const std::shared_ptr<FilamentMaterialObject> &default3DMaterial() const {
+		return m_default3DMaterial;
+	}
+
+	inline const std::shared_ptr<FilamentShaderObject> &defaultCanvasItemShader() const {
+		return m_defaultCanvasItemShader;
+	}
+
+
 private:
 
 	void upload3DTexture(const std::shared_ptr<FilamentTextureObject> &texture, const Vector<Ref<Image>> & p_data);
@@ -555,6 +570,9 @@ private:
 	FilamentObjectManager m_objectManager;
 	FilamentDirtyList m_dirtyList;
 	std::vector<std::unique_ptr<FilamentWindow>> m_windows;
+	std::shared_ptr<FilamentShaderObject> m_default3DShader;
+	std::shared_ptr<FilamentMaterialObject> m_default3DMaterial;
+	std::shared_ptr<FilamentShaderObject> m_defaultCanvasItemShader;
 	static filament::Engine *m_filamentEngine;
 };
 

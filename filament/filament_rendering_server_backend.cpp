@@ -1,5 +1,5 @@
 #include "filament_rendering_server_backend.h"
-#include "filament/LightManager.h"
+#include "filament/filament_texture_reference_object.h"
 #include "filament/filament_viewport_object.h"
 #include "filament/filament_window.h"
 #include "filament/filament_texture_object.h"
@@ -15,6 +15,10 @@
 #include "filament/filament_rendering_server.h"
 #include "filament/filament_light_object.h"
 #include "filament/filament_skeleton_object.h"
+#include "filament/filament_canvas.h"
+#include "filament/filament_canvas_item.h"
+#include "filament/filament_builtin_materials.h"
+#include "filament/filament_canvas_item_material_group.h"
 
 #include "servers/display_server.h"
 
@@ -403,8 +407,6 @@ void FilamentRenderingServerBackend::mesh_create_from_surfaces(RID output, const
 
 	auto mesh = std::make_shared<FilamentMesh>();
 	m_objectManager.associate(output, mesh);
-
-	printf("!! mesh_create_from_surfaces %p, %d surfaces\n", mesh.get(), p_surfaces.size());
 
 	mesh->reserveSurfaces(p_surfaces.size());
 	mesh->setBlendShapeCount(p_blend_shape_count);
@@ -1261,7 +1263,10 @@ void FilamentRenderingServerBackend::viewport_set_active(RID p_viewport, bool p_
 };
 
 void FilamentRenderingServerBackend::viewport_set_parent_viewport(RID p_viewport, RID p_parent_viewport)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "viewport_set_parent_viewport");
+	auto viewport = m_objectManager.resolve<FilamentViewportObject>(p_viewport);
+	if(viewport) {
+		viewport->setParentViewport(m_objectManager.resolve<FilamentViewportObject>(p_parent_viewport));
+	}
 };
 
 void FilamentRenderingServerBackend::viewport_set_canvas_cull_mask(RID p_viewport, uint32_t p_canvas_cull_mask)  {
@@ -1346,11 +1351,17 @@ void FilamentRenderingServerBackend::viewport_set_scenario(RID p_viewport, RID p
 }
 
 void FilamentRenderingServerBackend::viewport_attach_canvas(RID p_viewport, RID p_canvas)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "viewport_attach_canvas");
+	auto viewport = m_objectManager.resolve<FilamentViewportObject>(p_viewport);
+	if(viewport) {
+		viewport->attachCanvas(m_objectManager.resolve<FilamentCanvas>(p_canvas));
+	}
 };
 
 void FilamentRenderingServerBackend::viewport_remove_canvas(RID p_viewport, RID p_canvas)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "viewport_remove_canvas");
+	auto viewport = m_objectManager.resolve<FilamentViewportObject>(p_viewport);
+	if(viewport) {
+		viewport->removeCanvas(m_objectManager.resolve<FilamentCanvas>(p_canvas));
+	}
 };
 
 void FilamentRenderingServerBackend::viewport_set_canvas_transform(RID p_viewport, RID p_canvas, const Transform2D & p_offset)  {
@@ -1805,7 +1816,7 @@ TypedArray<Image> FilamentRenderingServerBackend::bake_render_uv2(RID p_base, co
 };
 
 void FilamentRenderingServerBackend::canvas_create(RID output)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "canvas_create");
+	m_objectManager.associate(output, std::make_shared<FilamentCanvas>());
 };
 
 void FilamentRenderingServerBackend::canvas_set_item_mirroring(RID p_canvas, RID p_item, const Point2 & p_mirroring)  {
@@ -1845,11 +1856,14 @@ void FilamentRenderingServerBackend::canvas_texture_set_texture_repeat(RID p_can
 };
 
 void FilamentRenderingServerBackend::canvas_item_create(RID output)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "canvas_item_create");
+	m_objectManager.associate(output, std::make_shared<FilamentCanvasItem>());
 }
 
 void FilamentRenderingServerBackend::canvas_item_set_parent(RID p_item, RID p_parent)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "canvas_item_set_parent");
+	auto item = m_objectManager.resolve<FilamentCanvasItem>(p_item);
+	if(item) {
+		item->setParent(std::dynamic_pointer_cast<FilamentCanvasItemContainer>(m_objectManager.resolve<FilamentObject>(p_parent)));
+	}
 };
 
 void FilamentRenderingServerBackend::canvas_item_set_default_texture_filter(RID p_item, RenderingServer::CanvasItemTextureFilter p_filter)  {
@@ -1861,7 +1875,10 @@ void FilamentRenderingServerBackend::canvas_item_set_default_texture_repeat(RID 
 };
 
 void FilamentRenderingServerBackend::canvas_item_set_visible(RID p_item, bool p_visible)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "canvas_item_set_visible");
+	auto item = m_objectManager.resolve<FilamentCanvasItem>(p_item);
+	if(item) {
+		item->setVisible(p_visible);
+	}
 };
 
 void FilamentRenderingServerBackend::canvas_item_set_light_mask(RID p_item, int p_mask)  {
@@ -1873,7 +1890,10 @@ void FilamentRenderingServerBackend::canvas_item_set_update_when_visible(RID p_i
 };
 
 void FilamentRenderingServerBackend::canvas_item_set_transform(RID p_item, const Transform2D & p_transform)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "canvas_item_set_transform");
+	auto item = m_objectManager.resolve<FilamentCanvasItem>(p_item);
+	if(item) {
+		item->setTransform(p_transform);
+	}
 };
 
 void FilamentRenderingServerBackend::canvas_item_set_clip(RID p_item, bool p_clip)  {
@@ -1925,11 +1945,21 @@ void FilamentRenderingServerBackend::canvas_item_add_circle(RID p_item, const Po
 };
 
 void FilamentRenderingServerBackend::canvas_item_add_texture_rect(RID p_item, const Rect2 & p_rect, RID p_texture, bool p_tile, const Color & p_modulate, bool p_transpose)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "canvas_item_add_texture_rect");
-};
+	auto item = m_objectManager.resolve<FilamentCanvasItem>(p_item);
+	if(item) {
+		auto texture = m_objectManager.resolve<FilamentTextureReferenceObject>(p_texture);
+
+		item->getMaterialGroup(texture)->addTextureRect(p_rect, p_tile, p_modulate, p_transpose);
+	}
+}
 
 void FilamentRenderingServerBackend::canvas_item_add_texture_rect_region(RID p_item, const Rect2 & p_rect, RID p_texture, const Rect2 & p_src_rect, const Color & p_modulate, bool p_transpose, bool p_clip_uv)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "canvas_item_add_texture_rect_region");
+	auto item = m_objectManager.resolve<FilamentCanvasItem>(p_item);
+	if(item) {
+		auto texture = m_objectManager.resolve<FilamentTextureReferenceObject>(p_texture);
+
+		item->getMaterialGroup(texture)->addTextureRectRegion(p_rect, p_src_rect, p_modulate, p_transpose, p_clip_uv);
+	}
 };
 
 void FilamentRenderingServerBackend::canvas_item_add_msdf_texture_rect_region(RID p_item, const Rect2 & p_rect, RID p_texture, const Rect2 & p_src_rect, const Color & p_modulate, int p_outline_size, float p_px_range, float p_scale)  {
@@ -1953,8 +1983,15 @@ void FilamentRenderingServerBackend::canvas_item_add_polygon(RID p_item, const V
 };
 
 void FilamentRenderingServerBackend::canvas_item_add_triangle_array(RID p_item, const Vector<int> & p_indices, const Vector<Point2> & p_points, const Vector<Color> & p_colors, const Vector<Point2> & p_uvs, const Vector<int> & p_bones, const Vector<float> & p_weights, RID p_texture, int p_count)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "canvas_item_add_triangle_array");
-};
+
+	(void)p_count; // documented as unused
+
+	auto item = m_objectManager.resolve<FilamentCanvasItem>(p_item);
+	if(item) {
+		auto texture = m_objectManager.resolve<FilamentTextureReferenceObject>(p_texture);
+		item->getMaterialGroup(texture)->addTriangleArray(p_indices, p_points, p_colors, p_uvs, p_bones, p_weights);
+	}
+}
 
 void FilamentRenderingServerBackend::canvas_item_add_mesh(RID p_item, const RID & p_mesh, const Transform2D & p_transform, const Color & p_modulate, RID p_texture)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "canvas_item_add_mesh");
@@ -2001,8 +2038,11 @@ void FilamentRenderingServerBackend::canvas_item_attach_skeleton(RID p_item, RID
 };
 
 void FilamentRenderingServerBackend::canvas_item_clear(RID p_item)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "canvas_item_clear");
-};
+	auto item = m_objectManager.resolve<FilamentCanvasItem>(p_item);
+	if(item) {
+		item->clear();
+	}
+}
 
 void FilamentRenderingServerBackend::canvas_item_set_draw_index(RID p_item, int p_index)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "canvas_item_set_draw_index");
@@ -2343,6 +2383,16 @@ void FilamentRenderingServerBackend::call_on_render_thread(const Callable & p_ca
 
 Error FilamentRenderingServerBackend::display_server_initialize() {
 	printf("FilamentRenderingServerBackend::display_server_initialize\n");
+
+
+	m_default3DShader = std::make_shared<FilamentShaderObject>();
+	m_default3DShader->createBuiltin(FilamentBuiltinMaterials::fallback_lit, FilamentBuiltinMaterials::fallback_lit_size);
+
+	m_default3DMaterial = std::make_shared<FilamentMaterialObject>();
+	m_default3DMaterial->setShader(m_default3DShader);
+
+	m_defaultCanvasItemShader = std::make_shared<FilamentShaderObject>();
+	m_defaultCanvasItemShader->createBuiltin(FilamentBuiltinMaterials::default_canvas_item, FilamentBuiltinMaterials::default_canvas_item_size);
 
 	return OK;
 }

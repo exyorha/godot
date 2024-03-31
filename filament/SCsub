@@ -2,6 +2,22 @@
 
 import subprocess
 
+def build_filament_material(target, source, env):
+    for index in range(len(source)):
+        input_file = source[index]
+        output_file = target[index]
+
+        res = subprocess.run([
+            env["FILAMENT_MATC"].get_abspath(),
+            "-o", output_file,
+            "-p", "all",
+            "-a", "all",
+            "-f", "header",
+            input_file
+        ])
+
+        res.check_returncode()
+
 filament_version = "1.50.2"
 
 Import("env")
@@ -46,7 +62,15 @@ res = subprocess.run(buildcmd)
 res.check_returncode()
 
 sources = [
+    "filament_builtin_materials.cpp",
     "filament_camera.cpp",
+    "filament_canvas.cpp",
+    "filament_canvas_element_texture_rect.cpp",
+    "filament_canvas_element_triangle_array.cpp",
+    "filament_canvas_item.cpp",
+    "filament_canvas_item_container.cpp",
+    "filament_canvas_item_material_group.cpp",
+    "filament_canvas_view.cpp",
     "filament_controlled_object_reference.cpp",
     "filament_engine_object.cpp",
     "filament_entity_object.cpp",
@@ -121,3 +145,17 @@ env.Prepend(
         "c++"
     ]
 )
+
+env.Append(
+    BUILDERS = {
+        "FILAMENT_MATERIAL":
+            env.Builder(
+                action=env.Run(build_filament_material, 'Building Filament material: "$TARGET"'),
+                suffix="mat.gen.h",
+                src_suffix=".mat",
+            ),
+    },
+    FILAMENT_MATC = Entry("#filament/%s/tools/matc/matc" % filament_builddir)
+)
+
+SConscript("materials/SCsub")

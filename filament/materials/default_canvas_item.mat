@@ -1,0 +1,20 @@
+material {
+	name: "Default Canvas Item Material",
+	shadingModel: unlit,
+	parameters: [
+		{ name: "itemTexture", precision: high, type: sampler2d }
+	],
+	quality: high,
+	requires: [ uv0, color ],
+	blending: transparent,
+	depthWrite: false,
+	depthCulling: false
+}
+
+fragment {
+	void material(inout MaterialInputs material) {
+		prepareMaterial(material);
+
+		material.baseColor = texture(materialParams_itemTexture, getUV0()) * getColor();
+	}
+}

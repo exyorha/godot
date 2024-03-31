@@ -1,0 +1,7 @@
+#!/usr/bin/env python
+
+Import("env")
+
+env.FILAMENT_MATERIAL("default_canvas_item.mat")
+env.FILAMENT_MATERIAL("fallback_lit.mat")
+
