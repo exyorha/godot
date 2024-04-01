@@ -6,6 +6,7 @@
 
 #include <core/templates/vector.h>
 #include <core/math/vector2.h>
+#include <core/templates/rid.h>
 
 #include <filament/RenderableManager.h>
 
@@ -24,7 +25,7 @@ public:
 
 	void clear();
 
-	FilamentCanvasItemMaterialGroup *getMaterialGroup(const std::shared_ptr<FilamentTextureReferenceObject> &texture);
+	FilamentCanvasItemMaterialGroup *getMaterialGroup(const RID &texture);
 
 	void setTransform(const Transform2D &transform);
 
@@ -35,6 +36,8 @@ public:
 private:
 
 	void updateOwningScene(const std::shared_ptr<FilamentScenarioObject> &scene);
+
+	void controlledObjectAboutToInvalidate(FilamentControlledObjectReferenceBase *linkedViaReference) override;
 
 	void doClean() override;
 

@@ -540,6 +540,9 @@ public:
 		return m_defaultCanvasItemShader;
 	}
 
+	inline const RID & defaultWhiteTextureRID() {
+		return m_defaultWhiteTextureRID;
+	}
 
 private:
 
@@ -573,6 +576,7 @@ private:
 	std::shared_ptr<FilamentShaderObject> m_default3DShader;
 	std::shared_ptr<FilamentMaterialObject> m_default3DMaterial;
 	std::shared_ptr<FilamentShaderObject> m_defaultCanvasItemShader;
+	RID m_defaultWhiteTextureRID;
 	static filament::Engine *m_filamentEngine;
 };
 

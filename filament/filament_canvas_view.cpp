@@ -21,14 +21,13 @@ FilamentCanvasView::FilamentCanvasView(const std::shared_ptr<FilamentCanvas> &ca
 	m_view->setScene(m_canvas->getBackingScene()->scene());
 	m_view->setCamera(m_camera->camera());
     m_view->setShadowingEnabled(false);
-	m_view->setFrontFaceWindingInverted(true);
 }
 
 FilamentCanvasView::~FilamentCanvasView() = default;
 
 void FilamentCanvasView::render(filament::Renderer *renderer, const filament::Viewport &viewport) {
 	m_camera->camera()->setProjection(filament::Camera::Projection::ORTHO,
-									  viewport.left, viewport.right(), viewport.bottom, viewport.top(),
+									  viewport.left, viewport.right(), viewport.height, 0,
 									  -100.0, 100.0);
 
 	m_view->setViewport(viewport);

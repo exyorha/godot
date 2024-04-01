@@ -382,16 +382,23 @@ void FilamentRenderingServerBackend::material_create(RID output)  {
 void FilamentRenderingServerBackend::material_set_shader(RID p_shader_material, RID p_shader)  {
 	auto material = m_objectManager.resolve<FilamentMaterialObject>(p_shader_material);
 	if(material) {
-		material->setShader(m_objectManager.resolve<FilamentShaderObject>(p_shader));
+		material->setParent(m_objectManager.resolve<FilamentMaterialInstanceSource>(p_shader));
 	}
 }
 
 void FilamentRenderingServerBackend::material_set_param(RID p_material, const StringName & p_param, const Variant & p_value)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "material_set_param");
-};
+	auto material = m_objectManager.resolve<FilamentMaterialObject>(p_material);
+	if(material) {
+		material->setParam(p_param, p_value);
+	}
+}
 
 Variant FilamentRenderingServerBackend::material_get_param(RID p_material, const StringName & p_param) const {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "material_get_param");
+	auto material = m_objectManager.resolve<FilamentMaterialObject>(p_material);
+	if(material) {
+		return material->getParam(p_param);
+	}
+
 	return Variant();
 };
 
@@ -1947,18 +1954,14 @@ void FilamentRenderingServerBackend::canvas_item_add_circle(RID p_item, const Po
 void FilamentRenderingServerBackend::canvas_item_add_texture_rect(RID p_item, const Rect2 & p_rect, RID p_texture, bool p_tile, const Color & p_modulate, bool p_transpose)  {
 	auto item = m_objectManager.resolve<FilamentCanvasItem>(p_item);
 	if(item) {
-		auto texture = m_objectManager.resolve<FilamentTextureReferenceObject>(p_texture);
-
-		item->getMaterialGroup(texture)->addTextureRect(p_rect, p_tile, p_modulate, p_transpose);
+		item->getMaterialGroup(p_texture)->addTextureRect(p_rect, p_tile, p_modulate, p_transpose);
 	}
 }
 
 void FilamentRenderingServerBackend::canvas_item_add_texture_rect_region(RID p_item, const Rect2 & p_rect, RID p_texture, const Rect2 & p_src_rect, const Color & p_modulate, bool p_transpose, bool p_clip_uv)  {
 	auto item = m_objectManager.resolve<FilamentCanvasItem>(p_item);
 	if(item) {
-		auto texture = m_objectManager.resolve<FilamentTextureReferenceObject>(p_texture);
-
-		item->getMaterialGroup(texture)->addTextureRectRegion(p_rect, p_src_rect, p_modulate, p_transpose, p_clip_uv);
+		item->getMaterialGroup(p_texture)->addTextureRectRegion(p_rect, p_src_rect, p_modulate, p_transpose, p_clip_uv);
 	}
 };
 
@@ -1988,8 +1991,7 @@ void FilamentRenderingServerBackend::canvas_item_add_triangle_array(RID p_item, 
 
 	auto item = m_objectManager.resolve<FilamentCanvasItem>(p_item);
 	if(item) {
-		auto texture = m_objectManager.resolve<FilamentTextureReferenceObject>(p_texture);
-		item->getMaterialGroup(texture)->addTriangleArray(p_indices, p_points, p_colors, p_uvs, p_bones, p_weights);
+		item->getMaterialGroup(p_texture)->addTriangleArray(p_indices, p_points, p_colors, p_uvs, p_bones, p_weights);
 	}
 }
 
@@ -2384,15 +2386,20 @@ void FilamentRenderingServerBackend::call_on_render_thread(const Callable & p_ca
 Error FilamentRenderingServerBackend::display_server_initialize() {
 	printf("FilamentRenderingServerBackend::display_server_initialize\n");
 
+	auto image = Image::create_empty(1, 1, false, Image::FORMAT_RGBA8);
+	image->fill(Color(1.0f, 1.0f, 1.0f, 1.0f));
+	m_defaultWhiteTextureRID = m_objectManager.allocate();
+	texture_2d_create(m_defaultWhiteTextureRID, image);
 
 	m_default3DShader = std::make_shared<FilamentShaderObject>();
 	m_default3DShader->createBuiltin(FilamentBuiltinMaterials::fallback_lit, FilamentBuiltinMaterials::fallback_lit_size);
 
 	m_default3DMaterial = std::make_shared<FilamentMaterialObject>();
-	m_default3DMaterial->setShader(m_default3DShader);
+	m_default3DMaterial->setParent(m_default3DShader);
 
 	m_defaultCanvasItemShader = std::make_shared<FilamentShaderObject>();
 	m_defaultCanvasItemShader->createBuiltin(FilamentBuiltinMaterials::default_canvas_item, FilamentBuiltinMaterials::default_canvas_item_size);
+	m_defaultCanvasItemShader->setParam("defaultCanvasTexture", m_defaultWhiteTextureRID);
 
 	return OK;
 }

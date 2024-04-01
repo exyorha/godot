@@ -7,9 +7,11 @@
 
 #include "core/templates/vector.h"
 #include "core/math/vector2.h"
+#include "core/templates/rid.h"
 
 #include "filament/filament_canvas_element_triangle_array.h"
 #include "filament/filament_canvas_element_texture_rect.h"
+#include "filament/filament_controlled_object_reference.h"
 
 #include <filament/RenderableManager.h>
 
@@ -18,16 +20,17 @@ struct Color;
 
 class FilamentTextureReferenceObject;
 class FilamentCanvasElementTriangleArray;
+class FilamentMaterialObject;
 
 class FilamentCanvasItemMaterialGroup {
 public:
-	explicit FilamentCanvasItemMaterialGroup(const std::shared_ptr<FilamentTextureReferenceObject> &texture);
+	FilamentCanvasItemMaterialGroup(FilamentControlledObjectReferenceOwner *owner, RID texture);
 	~FilamentCanvasItemMaterialGroup();
 
 	FilamentCanvasItemMaterialGroup(const FilamentCanvasItemMaterialGroup &other) = delete;
 	FilamentCanvasItemMaterialGroup &operator =(const FilamentCanvasItemMaterialGroup &other) = delete;
 
-	inline const std::shared_ptr<FilamentTextureReferenceObject> &texture() const {
+	inline const RID &texture() const {
 		return m_texture;
 	}
 
@@ -57,7 +60,8 @@ public:
 	size_t build(filament::RenderableManager::Builder &builder, size_t index);
 
 private:
-	std::shared_ptr<FilamentTextureReferenceObject> m_texture;
+	RID m_texture;
+	FilamentControlledObjectReference<FilamentMaterialObject> m_material;
 	std::vector<FilamentCanvasElementTriangleArray> m_triangleArrays;
 	std::optional<FilamentCanvasElementTextureRect> m_textureRect;
 };

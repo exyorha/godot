@@ -1,5 +1,6 @@
 #include "filament/filament_canvas_item.h"
 #include "filament/filament_canvas.h"
+#include "filament/filament_controlled_object_reference.h"
 #include "filament/filament_entity_object.h"
 #include "filament/filament_scenario_object.h"
 #include "filament/filament_rendering_server_backend.h"
@@ -91,12 +92,7 @@ void FilamentCanvasItem::clear() {
 	m_materialGroups.clear();
 }
 
-FilamentCanvasItemMaterialGroup *FilamentCanvasItem::getMaterialGroup(const std::shared_ptr<FilamentTextureReferenceObject> &texture) {
-
-	/*
-	 * TODO: if texture is null, subsitute the default solid white texture
-	 */
-
+FilamentCanvasItemMaterialGroup *FilamentCanvasItem::getMaterialGroup(const RID &texture) {
 	beforeGeometryChange();
 
 	for(const auto &group: m_materialGroups) {
@@ -105,7 +101,14 @@ FilamentCanvasItemMaterialGroup *FilamentCanvasItem::getMaterialGroup(const std:
 		}
 	}
 
-	return m_materialGroups.emplace_back(std::make_unique<FilamentCanvasItemMaterialGroup>(texture)).get();
+	return m_materialGroups.emplace_back(std::make_unique<FilamentCanvasItemMaterialGroup>(
+		static_cast<FilamentControlledObjectReferenceOwner *>(this), texture)).get();
+}
+
+void FilamentCanvasItem::controlledObjectAboutToInvalidate(FilamentControlledObjectReferenceBase *linkedViaReference) {
+	FilamentEntityObject::controlledObjectAboutToInvalidate(linkedViaReference);
+
+	beforeGeometryChange();
 }
 
 void FilamentCanvasItem::doClean() {

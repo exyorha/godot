@@ -1,8 +1,19 @@
 #include "filament/filament_canvas_item_material_group.h"
 #include "filament/filament_canvas_element_triangle_array.h"
+#include "filament/filament_material_object.h"
+#include "filament/filament_rendering_server_backend.h"
+#include "filament/filament_shader_object.h"
 
-FilamentCanvasItemMaterialGroup::FilamentCanvasItemMaterialGroup(const std::shared_ptr<FilamentTextureReferenceObject> &texture) : m_texture(texture) {
+FilamentCanvasItemMaterialGroup::FilamentCanvasItemMaterialGroup(FilamentControlledObjectReferenceOwner *owner,
+																 RID texture)
+	: m_texture(texture), m_material(owner) {
 
+	m_material = std::make_shared<FilamentMaterialObject>();
+	m_material->setFallbackParent(FilamentRenderingServerBackend::get()->defaultCanvasItemShader());
+
+	if(texture.is_valid()) {
+		m_material->setParam("defaultCanvasTexture", texture);
+	}
 }
 
 FilamentCanvasItemMaterialGroup::~FilamentCanvasItemMaterialGroup() = default;
@@ -21,13 +32,17 @@ size_t FilamentCanvasItemMaterialGroup::numberOfPrimitives() const {
 size_t FilamentCanvasItemMaterialGroup::build(filament::RenderableManager::Builder &builder, size_t index) {
 	size_t startIndex = index;
 
+	auto material = m_material->materialInstance();
+
 	for(auto &triangleArray: m_triangleArrays) {
 		triangleArray.build(builder, index);
+		builder.material(index, material);
 		index++;
 	}
 
 	if(m_textureRect.has_value()) {
 		m_textureRect->build(builder, index);
+		builder.material(index, material);
 		index++;
 	}
 

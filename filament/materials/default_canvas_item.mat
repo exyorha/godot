@@ -2,19 +2,37 @@ material {
 	name: "Default Canvas Item Material",
 	shadingModel: unlit,
 	parameters: [
-		{ name: "itemTexture", precision: high, type: sampler2d }
+		{ name: "defaultCanvasTexture", precision: high, type: sampler2d }
 	],
 	quality: high,
 	requires: [ uv0, color ],
 	blending: transparent,
 	depthWrite: false,
-	depthCulling: false
+	depthCulling: false,
+	flipUV: false
 }
 
 fragment {
 	void material(inout MaterialInputs material) {
 		prepareMaterial(material);
 
-		material.baseColor = texture(materialParams_itemTexture, getUV0()) * getColor();
+		/*
+		 * Convert the input UV from pixels to normalized coordinates, and flip.
+		 */
+		float2 correctedUV = getUV0() / vec2(textureSize(materialParams_defaultCanvasTexture, 0));
+		//correctedUV.y = 1.0 - correctedUV.y;
+
+		/*
+		 * Sample, modulate, and convert to premultiplied alpha.
+		 */
+		vec4 textureValue = texture(materialParams_defaultCanvasTexture, correctedUV);
+		textureValue *= getColor();
+
+		textureValue.rgb *= textureValue.a;
+
+		/*
+		 * Pass on to Filament, including transparency.
+		 */
+		material.baseColor = textureValue;
 	}
 }

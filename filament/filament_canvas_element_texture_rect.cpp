@@ -2,6 +2,7 @@
 #include "filament/filament_engine_object.h"
 #include "filament/filament_rendering_server_backend.h"
 #include "filament/filament_upload_helpers.h"
+#include "filament/filament_math_adapters.h"
 
 #include <filament/IndexBuffer.h>
 #include <filament/VertexBuffer.h>
@@ -122,22 +123,28 @@ void FilamentCanvasElementTextureRect::addTextureRect(
 	const Color & p_modulate,
 	bool p_transpose) {
 
-	ElementVertex topLeft;
-	ElementVertex topRight;
-	ElementVertex bottomLeft;
-	ElementVertex bottomRight;
+	ElementVertex topLeft = {
+		.position = filamentVectorFromGodotVector(p_rect.position),
+		.uv = filamentVectorFromGodotVector(Vector2(0.0, 0.0)),
+		.modulatingColor = filamentVectorFromGodotVector(p_modulate)
+	};
 
-	topLeft.position.x = p_rect.position.x;
-	topLeft.position.y = p_rect.position.y;
+	ElementVertex topRight = {
+		.position = filamentVectorFromGodotVector(p_rect.position + Vector2(p_rect.size.width, 0)),
+		.uv = filamentVectorFromGodotVector(Vector2(1.0, 0.0)),
+		.modulatingColor = filamentVectorFromGodotVector(p_modulate)
+	};
 
-	topRight.position.x = p_rect.position.x + p_rect.size.width;
-	topRight.position.y = p_rect.position.y;
-
-	bottomLeft.position.x = p_rect.position.x;
-	bottomLeft.position.y = p_rect.position.y + p_rect.size.height;
-
-	bottomRight.position.x = p_rect.position.x + p_rect.size.width;
-	bottomRight.position.y = p_rect.position.y + p_rect.size.height;
+	ElementVertex bottomLeft = {
+		.position = filamentVectorFromGodotVector(p_rect.position + Vector2(0, p_rect.size.height)),
+		.uv = filamentVectorFromGodotVector(Vector2(0.0, 1.0)),
+		.modulatingColor = filamentVectorFromGodotVector(p_modulate)
+	};
+	ElementVertex bottomRight = {
+		.position = filamentVectorFromGodotVector(p_rect.position + Vector2(p_rect.size.width, p_rect.size.height)),
+		.uv = filamentVectorFromGodotVector(Vector2(1.0, 1.0)),
+		.modulatingColor = filamentVectorFromGodotVector(p_modulate)
+	};
 
 	m_dirty = true;
 	m_vertices.append(topLeft);
@@ -153,22 +160,28 @@ void FilamentCanvasElementTextureRect::addTextureRectRegion(
 	bool p_transpose,
 	bool p_clip_uv) {
 
-	ElementVertex topLeft;
-	ElementVertex topRight;
-	ElementVertex bottomLeft;
-	ElementVertex bottomRight;
+	ElementVertex topLeft = {
+		.position = filamentVectorFromGodotVector(p_rect.position),
+		.uv = filamentVectorFromGodotVector(p_src_rect.position),
+		.modulatingColor = filamentVectorFromGodotVector(p_modulate)
+	};
 
-	topLeft.position.x = p_rect.position.x;
-	topLeft.position.y = p_rect.position.y;
+	ElementVertex topRight = {
+		.position = filamentVectorFromGodotVector(p_rect.position + Vector2(p_rect.size.width, 0)),
+		.uv = filamentVectorFromGodotVector(p_src_rect.position + Vector2(p_src_rect.size.width, 0)),
+		.modulatingColor = filamentVectorFromGodotVector(p_modulate)
+	};
 
-	topRight.position.x = p_rect.position.x + p_rect.size.width;
-	topRight.position.y = p_rect.position.y;
-
-	bottomLeft.position.x = p_rect.position.x;
-	bottomLeft.position.y = p_rect.position.y + p_rect.size.height;
-
-	bottomRight.position.x = p_rect.position.x + p_rect.size.width;
-	bottomRight.position.y = p_rect.position.y + p_rect.size.height;
+	ElementVertex bottomLeft = {
+		.position = filamentVectorFromGodotVector(p_rect.position + Vector2(0, p_rect.size.height)),
+		.uv = filamentVectorFromGodotVector(p_src_rect.position + Vector2(0, p_src_rect.size.height)),
+		.modulatingColor = filamentVectorFromGodotVector(p_modulate)
+	};
+	ElementVertex bottomRight = {
+		.position = filamentVectorFromGodotVector(p_rect.position + Vector2(p_rect.size.width, p_rect.size.height)),
+		.uv = filamentVectorFromGodotVector(p_src_rect.position + Vector2(p_src_rect.size.width, p_src_rect.size.height)),
+		.modulatingColor = filamentVectorFromGodotVector(p_modulate)
+	};
 
 	m_dirty = true;
 	m_vertices.append(topLeft);
