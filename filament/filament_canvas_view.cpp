@@ -28,7 +28,7 @@ FilamentCanvasView::~FilamentCanvasView() = default;
 void FilamentCanvasView::render(filament::Renderer *renderer, const filament::Viewport &viewport) {
 	m_camera->camera()->setProjection(filament::Camera::Projection::ORTHO,
 									  viewport.left, viewport.right(), viewport.height, 0,
-									  -100.0, 100.0);
+									  -1.0, 1.0);
 
 	m_view->setViewport(viewport);
 	renderer->render(m_view.get());

@@ -7,13 +7,13 @@
 #include <core/templates/vector.h>
 #include <core/math/vector2.h>
 #include <core/templates/rid.h>
+#include <core/math/transform_2d.h>
 
 #include <filament/RenderableManager.h>
 
 class FilamentScenarioObject;
 class FilamentTextureReferenceObject;
 class FilamentCanvasItemMaterialGroup;
-struct Transform2D;
 class FilamentCanvas;
 
 class FilamentCanvasItem final : public FilamentEntityObject, public FilamentCanvasItemContainer {
@@ -52,15 +52,15 @@ public:
 
 	void setDrawBehindParent(bool drawBehindParent);
 
-	inline uint16_t blendOrder() const {
+	inline float blendOrder() const {
 		return m_blendOrder;
 	}
 
-	void setBlendOrder(uint16_t blendOrder);
+	void setBlendOrder(float blendOrder);
 
 protected:
 	int32_t calculateZOrder(int32_t parentZOrder) const override;
-	void collectSelf(FilamentCanvasRenderOrderCollector &collector, int32_t calculatedZOrder) override;
+	std::optional<size_t> collectSelf(FilamentCanvasRenderOrderCollector &collector, int32_t calculatedZOrder) override;
 
 private:
 
@@ -72,6 +72,8 @@ private:
 
 	void beforeGeometryChange();
 
+	void updateTransform();
+
 	std::weak_ptr<FilamentCanvasItemContainer> m_parent;
 	std::weak_ptr<FilamentCanvas> m_owningCanvas;
 	std::shared_ptr<FilamentScenarioObject> m_owningScene;
@@ -80,7 +82,8 @@ private:
 	int32_t m_zIndex;
 	bool m_zRelativeToParent;
 	bool m_drawBehindParent;
-	uint16_t m_blendOrder;
+	float m_blendOrder;
+	Transform2D m_transform;
 };
 
 #endif

@@ -15,14 +15,17 @@ public:
 	FilamentCanvasRenderOrderCollector(const FilamentCanvasRenderOrderCollector &other) = delete;
 	FilamentCanvasRenderOrderCollector &operator =(const FilamentCanvasRenderOrderCollector &other) = delete;
 
-	void collectItem(const std::shared_ptr<FilamentCanvasItem> &item, int32_t zOrder);
+	size_t collectItem(const std::shared_ptr<FilamentCanvasItem> &item, int32_t zOrder);
 
 	void finalize();
+
+	void setItemParent(size_t itemId, size_t parentId);
 
 private:
 	struct Item {
 		std::shared_ptr<FilamentCanvasItem> item;
 		size_t inOrderDrawingIndex;
+		size_t parentId;
 		int32_t zOrder;
 	};
 

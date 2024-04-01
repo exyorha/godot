@@ -144,13 +144,6 @@ void FilamentCanvasItem::doClean() {
 	box.set(filament::math::float3(-100000, -100000, -100000), filament::math::float3(100000, 100000, 100000));
 	builder.boundingBox(box);
 
-	printf("FilamentCanvasItem(%p): built with blend order %u\n", this, m_blendOrder);
-
-	for(size_t index = 0; index < primitiveCount; index++) {
-		builder.globalBlendOrderEnabled(index, true);
-		builder.blendOrder(index, m_blendOrder);
-	}
-
 	auto result = builder.build(*engine, entity());
 	if(result != decltype(result)::Success) {
 		throw std::runtime_error("failed to build the canvas item renderable");
@@ -158,11 +151,16 @@ void FilamentCanvasItem::doClean() {
 }
 
 void FilamentCanvasItem::setTransform(const Transform2D &transform) {
+	m_transform = transform;
+	updateTransform();
+}
+
+void FilamentCanvasItem::updateTransform() {
 	Transform3D transform3D(
-		transform.columns[0].x, transform.columns[0].y, 0,
-		transform.columns[1].x, transform.columns[1].y, 0,
+		m_transform.columns[0].x, m_transform.columns[0].y, 0,
+		m_transform.columns[1].x, m_transform.columns[1].y, 0,
 		0, 0, 1,
-		transform.columns[2].x, transform.columns[2].y, 0);
+		m_transform.columns[2].x, m_transform.columns[2].y, m_blendOrder);
 
 	FilamentEntityObject::setTransform(transform3D);
 
@@ -231,27 +229,12 @@ void FilamentCanvasItem::setDrawBehindParent(bool drawBehindParent) {
 	}
 }
 
-void FilamentCanvasItem::setBlendOrder(uint16_t blendOrder) {
-	if(blendOrder != m_blendOrder) {
-		m_blendOrder = blendOrder;
+void FilamentCanvasItem::setBlendOrder(float blendOrder) {
+	m_blendOrder = blendOrder;
 
-		if(!isDirty()) {
-
-			auto engine = FilamentRenderingServerBackend::filamentEngine();
-			auto &rm = engine->getRenderableManager();
-
-			auto instance = rm.getInstance(entity());
-			if(instance) {
-				auto primitiveCount = rm.getPrimitiveCount(instance);
-				printf("FilamentCanvasItem(%p): blend order changed to %u\n", this, m_blendOrder);
-				for(size_t primitiveIndex = 0; primitiveIndex < primitiveCount; primitiveIndex++) {
-					rm.setBlendOrderAt(instance, primitiveIndex, m_blendOrder);
-				}
-			}
-		}
-	}
+	updateTransform();
 }
 
-void FilamentCanvasItem::collectSelf(FilamentCanvasRenderOrderCollector &collector, int32_t calculatedZOrder) {
-	collector.collectItem(std::static_pointer_cast<FilamentCanvasItem>(shared_from_this()), calculatedZOrder);
+std::optional<size_t> FilamentCanvasItem::collectSelf(FilamentCanvasRenderOrderCollector &collector, int32_t calculatedZOrder) {
+	return collector.collectItem(std::static_pointer_cast<FilamentCanvasItem>(shared_from_this()), calculatedZOrder);
 }

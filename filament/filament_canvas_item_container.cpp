@@ -1,5 +1,6 @@
 #include "filament/filament_canvas_item_container.h"
 #include "filament/filament_canvas_item.h"
+#include "filament/filament_canvas_render_order_collector.h"
 
 #include <algorithm>
 
@@ -21,33 +22,48 @@ void FilamentCanvasItemContainer::removeChild(const std::shared_ptr<FilamentCanv
 	m_children.erase(end, m_children.end());
 }
 
-void FilamentCanvasItemContainer::collectItems(FilamentCanvasRenderOrderCollector &collector, int32_t parentZOrder) {
+std::optional<size_t> FilamentCanvasItemContainer::collectItems(FilamentCanvasRenderOrderCollector &collector, int32_t parentZOrder) {
 	auto thisItemZOrder = calculateZOrder(parentZOrder);
 
+	std::vector<size_t> earlyChildren;
 	for(const auto &childWeak: m_children) {
 		auto child = childWeak.lock();
 
 		if(child && child->drawBehindParent()) {
-			child->collectItems(collector, thisItemZOrder);
+			auto childId = child->collectItems(collector, thisItemZOrder);
+			if(childId.has_value()) {
+				earlyChildren.push_back(*childId);
+			}
 		}
 	}
 
-	collectSelf(collector, thisItemZOrder);
+	auto selfId = collectSelf(collector, thisItemZOrder);
+	if(selfId.has_value()) {
+		for(auto earlyChild: earlyChildren) {
+			collector.setItemParent(earlyChild, *selfId);
+		}
+	}
 
 	for(const auto &childWeak: m_children) {
 		auto child = childWeak.lock();
 
 		if(child && !child->drawBehindParent()) {
-			child->collectItems(collector, thisItemZOrder);
+			auto childId = child->collectItems(collector, thisItemZOrder);
+			if(childId.has_value() && selfId.has_value()) {
+				collector.setItemParent(*childId, *selfId);
+			}
 		}
 	}
+
+	return selfId;
 }
 
 int32_t FilamentCanvasItemContainer::calculateZOrder(int32_t parentZOrder) const {
 	return parentZOrder;
 }
 
-void FilamentCanvasItemContainer::collectSelf(FilamentCanvasRenderOrderCollector &collector, int32_t calculatedZOrder) {
+std::optional<size_t> FilamentCanvasItemContainer::collectSelf(FilamentCanvasRenderOrderCollector &collector, int32_t calculatedZOrder) {
 	(void)collector;
 	(void)calculatedZOrder;
+	return std::nullopt;
 }
