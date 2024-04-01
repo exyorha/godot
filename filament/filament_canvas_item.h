@@ -14,6 +14,7 @@ class FilamentScenarioObject;
 class FilamentTextureReferenceObject;
 class FilamentCanvasItemMaterialGroup;
 struct Transform2D;
+class FilamentCanvas;
 
 class FilamentCanvasItem final : public FilamentEntityObject, public FilamentCanvasItemContainer {
 public:
@@ -33,6 +34,34 @@ public:
 
 	bool isEffectivelyVisible() const override;
 
+	inline int32_t zIndex() const {
+		return m_zIndex;
+	}
+
+	void setZIndex(int zIndex);
+
+	inline bool zRelativeToParent() const {
+		return m_zRelativeToParent;
+	}
+
+	void setZRelativeToParent(bool zRelativeToParent);
+
+	inline bool drawBehindParent() const {
+		return m_drawBehindParent;
+	}
+
+	void setDrawBehindParent(bool drawBehindParent);
+
+	inline uint16_t blendOrder() const {
+		return m_blendOrder;
+	}
+
+	void setBlendOrder(uint16_t blendOrder);
+
+protected:
+	int32_t calculateZOrder(int32_t parentZOrder) const override;
+	void collectSelf(FilamentCanvasRenderOrderCollector &collector, int32_t calculatedZOrder) override;
+
 private:
 
 	void updateOwningScene(const std::shared_ptr<FilamentScenarioObject> &scene);
@@ -44,9 +73,14 @@ private:
 	void beforeGeometryChange();
 
 	std::weak_ptr<FilamentCanvasItemContainer> m_parent;
+	std::weak_ptr<FilamentCanvas> m_owningCanvas;
 	std::shared_ptr<FilamentScenarioObject> m_owningScene;
 	std::vector<std::unique_ptr<FilamentCanvasItemMaterialGroup>> m_materialGroups;
 	bool m_visible;
+	int32_t m_zIndex;
+	bool m_zRelativeToParent;
+	bool m_drawBehindParent;
+	uint16_t m_blendOrder;
 };
 
 #endif

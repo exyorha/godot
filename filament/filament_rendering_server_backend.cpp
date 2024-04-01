@@ -1928,8 +1928,11 @@ void FilamentRenderingServerBackend::canvas_item_set_visibility_layer(RID p_item
 };
 
 void FilamentRenderingServerBackend::canvas_item_set_draw_behind_parent(RID p_item, bool p_enable)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "canvas_item_set_draw_behind_parent");
-};
+	auto item = m_objectManager.resolve<FilamentCanvasItem>(p_item);
+	if(item) {
+		item->setDrawBehindParent(p_enable);
+	}
+}
 
 void FilamentRenderingServerBackend::canvas_item_add_line(RID p_item, const Point2 & p_from, const Point2 & p_to, const Color & p_color, float p_width, bool p_antialiased)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "canvas_item_add_line");
@@ -2024,11 +2027,17 @@ void FilamentRenderingServerBackend::canvas_item_set_sort_children_by_y(RID p_it
 };
 
 void FilamentRenderingServerBackend::canvas_item_set_z_index(RID p_item, int p_z)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "canvas_item_set_z_index");
-};
+	auto item = m_objectManager.resolve<FilamentCanvasItem>(p_item);
+	if(item) {
+		item->setZIndex(p_z);
+	}
+}
 
 void FilamentRenderingServerBackend::canvas_item_set_z_as_relative_to_parent(RID p_item, bool p_enable)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "canvas_item_set_z_as_relative_to_parent");
+	auto item = m_objectManager.resolve<FilamentCanvasItem>(p_item);
+	if(item) {
+		item->setZRelativeToParent(p_enable);
+	}
 };
 
 void FilamentRenderingServerBackend::canvas_item_set_copy_to_backbuffer(RID p_item, bool p_enable, const Rect2 & p_rect)  {

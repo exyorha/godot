@@ -19,6 +19,13 @@ public:
 
 	bool isEffectivelyVisible() const override;
 
+	inline void renderingOrderChanged() {
+		markDirty();
+	}
+
+protected:
+	void doClean() override;
+
 private:
 	std::shared_ptr<FilamentScenarioObject> m_backingScene;
 };

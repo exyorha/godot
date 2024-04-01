@@ -131,18 +131,18 @@ void FilamentCanvasElementTextureRect::addTextureRect(
 
 	ElementVertex topRight = {
 		.position = filamentVectorFromGodotVector(p_rect.position + Vector2(p_rect.size.width, 0)),
-		.uv = filamentVectorFromGodotVector(Vector2(1.0, 0.0)),
+		.uv = filamentVectorFromGodotVector(Vector2(p_rect.size.width, 0)),
 		.modulatingColor = filamentVectorFromGodotVector(p_modulate)
 	};
 
 	ElementVertex bottomLeft = {
 		.position = filamentVectorFromGodotVector(p_rect.position + Vector2(0, p_rect.size.height)),
-		.uv = filamentVectorFromGodotVector(Vector2(0.0, 1.0)),
+		.uv = filamentVectorFromGodotVector(Vector2(0, p_rect.size.height)),
 		.modulatingColor = filamentVectorFromGodotVector(p_modulate)
 	};
 	ElementVertex bottomRight = {
 		.position = filamentVectorFromGodotVector(p_rect.position + Vector2(p_rect.size.width, p_rect.size.height)),
-		.uv = filamentVectorFromGodotVector(Vector2(1.0, 1.0)),
+		.uv = filamentVectorFromGodotVector(Vector2(p_rect.size.width, p_rect.size.height)),
 		.modulatingColor = filamentVectorFromGodotVector(p_modulate)
 	};
 

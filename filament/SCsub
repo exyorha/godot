@@ -70,6 +70,7 @@ sources = [
     "filament_canvas_item.cpp",
     "filament_canvas_item_container.cpp",
     "filament_canvas_item_material_group.cpp",
+    "filament_canvas_render_order_collector.cpp",
     "filament_canvas_view.cpp",
     "filament_controlled_object_reference.cpp",
     "filament_engine_object.cpp",
@@ -113,7 +114,8 @@ env_filament.Prepend(CPPPATH=[
     "#filament/%s/libs/utils/include" % filament_srcdir,
     "#filament/%s/libs/math/include" % filament_srcdir,
     "#filament/%s/libs/filabridge/include" % filament_srcdir,
-    "#filament/%s/libs/geometry/include" % filament_srcdir
+    "#filament/%s/libs/geometry/include" % filament_srcdir,
+    "#filament/%s/third_party/robin-map" % filament_srcdir
 ])
 
 lib = env_filament.add_library("filamentserver", sources)

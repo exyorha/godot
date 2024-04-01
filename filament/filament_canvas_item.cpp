@@ -5,11 +5,13 @@
 #include "filament/filament_scenario_object.h"
 #include "filament/filament_rendering_server_backend.h"
 #include "filament/filament_canvas_item_material_group.h"
+#include "filament/filament_canvas_render_order_collector.h"
 
 #include <filament/Scene.h>
 #include <filament/Engine.h>
 
-FilamentCanvasItem::FilamentCanvasItem() : m_visible(true) {
+FilamentCanvasItem::FilamentCanvasItem() : m_visible(true), m_zIndex(0), m_zRelativeToParent(true), m_drawBehindParent(false),
+	m_blendOrder(0) {
 
 }
 
@@ -40,6 +42,7 @@ void FilamentCanvasItem::setParent(const std::shared_ptr<FilamentCanvasItemConta
 		FilamentEntityObject::setParent(parentItem);
 
 		auto canvas = FilamentCanvas::getCanvas(parent);
+		m_owningCanvas = canvas;
 
 		std::shared_ptr<FilamentScenarioObject> scene;
 		if(canvas) {
@@ -47,6 +50,10 @@ void FilamentCanvasItem::setParent(const std::shared_ptr<FilamentCanvasItemConta
 		}
 
 		updateOwningScene(scene);
+
+		if(canvas) {
+			canvas->renderingOrderChanged();
+		}
 	}
 }
 
@@ -60,9 +67,6 @@ void FilamentCanvasItem::updateOwningScene(const std::shared_ptr<FilamentScenari
 
 		if(m_owningScene) {
 			m_owningScene->scene()->addEntity(entity());
-			printf("FilamentCanvasItem %p: placed to scene %p\n", this, m_owningScene->scene());
-		} else {
-			printf("FilamentCanvasItem %p: removed from scene\n", this);
 		}
 
 		for(const auto &weakChild: children()) {
@@ -140,13 +144,17 @@ void FilamentCanvasItem::doClean() {
 	box.set(filament::math::float3(-100000, -100000, -100000), filament::math::float3(100000, 100000, 100000));
 	builder.boundingBox(box);
 
+	printf("FilamentCanvasItem(%p): built with blend order %u\n", this, m_blendOrder);
+
+	for(size_t index = 0; index < primitiveCount; index++) {
+		builder.globalBlendOrderEnabled(index, true);
+		builder.blendOrder(index, m_blendOrder);
+	}
+
 	auto result = builder.build(*engine, entity());
 	if(result != decltype(result)::Success) {
 		throw std::runtime_error("failed to build the canvas item renderable");
 	}
-
-
-	printf("FilamentCanvasItem %p: built with %zu primitves\n", this, primitiveCount);
 }
 
 void FilamentCanvasItem::setTransform(const Transform2D &transform) {
@@ -179,4 +187,71 @@ bool FilamentCanvasItem::isEffectivelyVisible() const {
 	}
 
 	return parent->isEffectivelyVisible();
+}
+
+
+void FilamentCanvasItem::setZIndex(int zIndex) {
+	if(m_zIndex != zIndex) {
+		m_zIndex = zIndex;
+
+		auto canvas = m_owningCanvas.lock();
+		if(canvas) {
+			canvas->renderingOrderChanged();
+		}
+	}
+}
+
+void FilamentCanvasItem::setZRelativeToParent(bool zRelativeToParent) {
+	if(m_zRelativeToParent != zRelativeToParent) {
+		m_zRelativeToParent = zRelativeToParent;
+
+		auto canvas = m_owningCanvas.lock();
+		if(canvas) {
+			canvas->renderingOrderChanged();
+		}
+	}
+}
+
+int32_t FilamentCanvasItem::calculateZOrder(int32_t parentZOrder) const {
+	if(m_zRelativeToParent) {
+		return parentZOrder + m_zIndex;
+	} else {
+		return m_zIndex;
+	}
+}
+
+void FilamentCanvasItem::setDrawBehindParent(bool drawBehindParent) {
+	if(m_drawBehindParent != drawBehindParent) {
+		m_drawBehindParent = drawBehindParent;
+
+		auto canvas = m_owningCanvas.lock();
+		if(canvas) {
+			canvas->renderingOrderChanged();
+		}
+	}
+}
+
+void FilamentCanvasItem::setBlendOrder(uint16_t blendOrder) {
+	if(blendOrder != m_blendOrder) {
+		m_blendOrder = blendOrder;
+
+		if(!isDirty()) {
+
+			auto engine = FilamentRenderingServerBackend::filamentEngine();
+			auto &rm = engine->getRenderableManager();
+
+			auto instance = rm.getInstance(entity());
+			if(instance) {
+				auto primitiveCount = rm.getPrimitiveCount(instance);
+				printf("FilamentCanvasItem(%p): blend order changed to %u\n", this, m_blendOrder);
+				for(size_t primitiveIndex = 0; primitiveIndex < primitiveCount; primitiveIndex++) {
+					rm.setBlendOrderAt(instance, primitiveIndex, m_blendOrder);
+				}
+			}
+		}
+	}
+}
+
+void FilamentCanvasItem::collectSelf(FilamentCanvasRenderOrderCollector &collector, int32_t calculatedZOrder) {
+	collector.collectItem(std::static_pointer_cast<FilamentCanvasItem>(shared_from_this()), calculatedZOrder);
 }

@@ -9,7 +9,8 @@ material {
 	blending: transparent,
 	depthWrite: false,
 	depthCulling: false,
-	flipUV: false
+	flipUV: false,
+	culling: none
 }
 
 fragment {
@@ -17,10 +18,9 @@ fragment {
 		prepareMaterial(material);
 
 		/*
-		 * Convert the input UV from pixels to normalized coordinates, and flip.
+		 * Convert the input UV from pixels to normalized coordinates.
 		 */
 		float2 correctedUV = getUV0() / vec2(textureSize(materialParams_defaultCanvasTexture, 0));
-		//correctedUV.y = 1.0 - correctedUV.y;
 
 		/*
 		 * Sample, modulate, and convert to premultiplied alpha.

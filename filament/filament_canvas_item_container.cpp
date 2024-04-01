@@ -1,4 +1,5 @@
 #include "filament/filament_canvas_item_container.h"
+#include "filament/filament_canvas_item.h"
 
 #include <algorithm>
 
@@ -18,4 +19,35 @@ void FilamentCanvasItemContainer::removeChild(const std::shared_ptr<FilamentCanv
 	});
 
 	m_children.erase(end, m_children.end());
+}
+
+void FilamentCanvasItemContainer::collectItems(FilamentCanvasRenderOrderCollector &collector, int32_t parentZOrder) {
+	auto thisItemZOrder = calculateZOrder(parentZOrder);
+
+	for(const auto &childWeak: m_children) {
+		auto child = childWeak.lock();
+
+		if(child && child->drawBehindParent()) {
+			child->collectItems(collector, thisItemZOrder);
+		}
+	}
+
+	collectSelf(collector, thisItemZOrder);
+
+	for(const auto &childWeak: m_children) {
+		auto child = childWeak.lock();
+
+		if(child && !child->drawBehindParent()) {
+			child->collectItems(collector, thisItemZOrder);
+		}
+	}
+}
+
+int32_t FilamentCanvasItemContainer::calculateZOrder(int32_t parentZOrder) const {
+	return parentZOrder;
+}
+
+void FilamentCanvasItemContainer::collectSelf(FilamentCanvasRenderOrderCollector &collector, int32_t calculatedZOrder) {
+	(void)collector;
+	(void)calculatedZOrder;
 }

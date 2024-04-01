@@ -71,7 +71,7 @@ void FilamentViewportObject::render(filament::Renderer *renderer) {
 	for(const auto &viewPtr: m_attachedCanvases) {
 		viewPtr->render(renderer, viewport);
 	}
-
+#if 0
 	for(const auto &childPtr: m_childViewports) {
 		auto child = childPtr.lock();
 
@@ -80,6 +80,7 @@ void FilamentViewportObject::render(filament::Renderer *renderer) {
 			child->render(renderer);
 		}
 	}
+#endif
 }
 
 void FilamentViewportObject::setScenario(const std::shared_ptr<FilamentScenarioObject> &scenario) {

@@ -5,6 +5,7 @@
 #include <memory>
 
 class FilamentCanvasItem;
+class FilamentCanvasRenderOrderCollector;
 
 class FilamentCanvasItemContainer {
 protected:
@@ -19,12 +20,17 @@ public:
 	void addChild(const std::shared_ptr<FilamentCanvasItem> &item);
 	void removeChild(const std::shared_ptr<FilamentCanvasItem> &item);
 
+	void collectItems(FilamentCanvasRenderOrderCollector &collector, int32_t parentZOrder);
+
 	virtual bool isEffectivelyVisible() const = 0;
 
 protected:
 	inline const std::vector<std::weak_ptr<FilamentCanvasItem>> &children() const {
 		return m_children;
 	}
+
+	virtual int32_t calculateZOrder(int32_t parentZOrder) const;
+	virtual void collectSelf(FilamentCanvasRenderOrderCollector &collector, int32_t calculatedZOrder);
 
 private:
 	std::vector<std::weak_ptr<FilamentCanvasItem>> m_children;
