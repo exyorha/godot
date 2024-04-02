@@ -8,11 +8,16 @@
 #include <filament/VertexBuffer.h>
 #include <filament/MaterialEnums.h>
 
-FilamentCanvasElementTextureRect::FilamentCanvasElementTextureRect() : m_dirty(false) {
+FilamentCanvasElementTextureRect::FilamentCanvasElementTextureRect(FilamentControlledObjectReferenceOwner *owner, RID texture) :
+	FilamentCanvasElement(owner, texture), m_dirty(false) {
 
 }
 
 FilamentCanvasElementTextureRect::~FilamentCanvasElementTextureRect() = default;
+
+auto FilamentCanvasElementTextureRect::type() const -> Type {
+	return Type::TextureRect;
+}
 
 void FilamentCanvasElementTextureRect::build(filament::RenderableManager::Builder &builder, size_t index) {
 	if(m_dirty) {
@@ -28,6 +33,7 @@ void FilamentCanvasElementTextureRect::build(filament::RenderableManager::Builde
 	}
 
 	builder.geometry(index, filament::RenderableManager::PrimitiveType::TRIANGLES, m_vertexBuffer.get(), m_indexBuffer.get());
+	builder.material(index, material());
 }
 
 void FilamentCanvasElementTextureRect::buildGeometry() {

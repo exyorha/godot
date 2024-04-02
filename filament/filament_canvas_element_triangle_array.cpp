@@ -7,13 +7,14 @@
 #include <filament/VertexBuffer.h>
 
 FilamentCanvasElementTriangleArray::FilamentCanvasElementTriangleArray(
+	FilamentControlledObjectReferenceOwner *owner, RID texture,
 	const Vector<int> & p_indices,
 	const Vector<Point2> & p_points,
 	const Vector<Color> & p_colors,
 	const Vector<Point2> & p_uvs,
 	const Vector<int> & p_bones,
 	const Vector<float> & p_weights
-) {
+) : FilamentCanvasElement(owner, texture) {
 
 	Vector<uint16_t> truncatedBones;
 	if(!p_bones.size()) {
@@ -126,10 +127,11 @@ FilamentCanvasElementTriangleArray::FilamentCanvasElementTriangleArray(
 
 FilamentCanvasElementTriangleArray::~FilamentCanvasElementTriangleArray() = default;
 
-FilamentCanvasElementTriangleArray::FilamentCanvasElementTriangleArray(FilamentCanvasElementTriangleArray &&other) noexcept = default;
-
-FilamentCanvasElementTriangleArray &FilamentCanvasElementTriangleArray::operator =(FilamentCanvasElementTriangleArray &&other) noexcept = default;
+auto FilamentCanvasElementTriangleArray::type() const -> Type {
+	return Type::TriangleArray;
+}
 
 void FilamentCanvasElementTriangleArray::build(filament::RenderableManager::Builder &builder, size_t index) {
 	builder.geometry(index, filament::RenderableManager::PrimitiveType::TRIANGLES, m_vertexBuffer.get(), m_indexBuffer.get());
+	builder.material(index, material());
 }

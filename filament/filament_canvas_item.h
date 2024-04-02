@@ -13,8 +13,10 @@
 
 class FilamentScenarioObject;
 class FilamentTextureReferenceObject;
-class FilamentCanvasItemMaterialGroup;
 class FilamentCanvas;
+class FilamentCanvasElement;
+struct Color;
+class FilamentCanvasElementTextureRect;
 
 class FilamentCanvasItem final : public FilamentEntityObject, public FilamentCanvasItemContainer {
 public:
@@ -25,8 +27,6 @@ public:
 	void setParent(const std::shared_ptr<FilamentCanvasItemContainer> &parent);
 
 	void clear();
-
-	FilamentCanvasItemMaterialGroup *getMaterialGroup(const RID &texture);
 
 	void setTransform(const Transform2D &transform);
 
@@ -58,6 +58,30 @@ public:
 
 	void setBlendOrder(float blendOrder);
 
+	void addTextureRect(
+		RID texture,
+		const Rect2 & p_rect,
+		bool p_tile,
+		const Color & p_modulate,
+		bool p_transpose);
+
+	void addTextureRectRegion(
+		RID texture,
+		const Rect2 & p_rect,
+		const Rect2 & p_src_rect,
+		const Color & p_modulate,
+		bool p_transpose,
+		bool p_clip_uv);
+
+	void addTriangleArray(
+		RID texture,
+		const Vector<int> & p_indices,
+		const Vector<Point2> & p_points,
+		const Vector<Color> & p_colors,
+		const Vector<Point2> & p_uvs,
+		const Vector<int> & p_bones,
+		const Vector<float> & p_weights);
+
 protected:
 	int32_t calculateZOrder(int32_t parentZOrder) const override;
 	std::optional<size_t> collectSelf(FilamentCanvasRenderOrderCollector &collector, int32_t calculatedZOrder) override;
@@ -74,10 +98,12 @@ private:
 
 	void updateTransform();
 
+	FilamentCanvasElementTextureRect *createOrReuseTextureRect(RID texture);
+
 	std::weak_ptr<FilamentCanvasItemContainer> m_parent;
 	std::weak_ptr<FilamentCanvas> m_owningCanvas;
 	std::shared_ptr<FilamentScenarioObject> m_owningScene;
-	std::vector<std::unique_ptr<FilamentCanvasItemMaterialGroup>> m_materialGroups;
+	std::vector<std::unique_ptr<FilamentCanvasElement>> m_elements;
 	bool m_visible;
 	int32_t m_zIndex;
 	bool m_zRelativeToParent;

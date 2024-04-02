@@ -18,7 +18,6 @@
 #include "filament/filament_canvas.h"
 #include "filament/filament_canvas_item.h"
 #include "filament/filament_builtin_materials.h"
-#include "filament/filament_canvas_item_material_group.h"
 
 #include "servers/display_server.h"
 
@@ -266,12 +265,12 @@ void FilamentRenderingServerBackend::texture_3d_placeholder_create(RID output)  
 
 Ref<Image> FilamentRenderingServerBackend::texture_2d_get(RID p_texture) const {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "texture_2d_get");
-	return Ref<Image>();
+	return Image::create_empty(1, 1, false, Image::FORMAT_RGBA8);
 };
 
 Ref<Image> FilamentRenderingServerBackend::texture_2d_layer_get(RID p_texture, int p_layer) const {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "texture_2d_layer_get");
-	return Ref<Image>();
+	return Image::create_empty(1, 1, false, Image::FORMAT_RGBA8);
 };
 
 Vector<Ref<Image>> FilamentRenderingServerBackend::texture_3d_get(RID p_texture) const {
@@ -1957,14 +1956,14 @@ void FilamentRenderingServerBackend::canvas_item_add_circle(RID p_item, const Po
 void FilamentRenderingServerBackend::canvas_item_add_texture_rect(RID p_item, const Rect2 & p_rect, RID p_texture, bool p_tile, const Color & p_modulate, bool p_transpose)  {
 	auto item = m_objectManager.resolve<FilamentCanvasItem>(p_item);
 	if(item) {
-		item->getMaterialGroup(p_texture)->addTextureRect(p_rect, p_tile, p_modulate, p_transpose);
+		item->addTextureRect(p_texture, p_rect, p_tile, p_modulate, p_transpose);
 	}
 }
 
 void FilamentRenderingServerBackend::canvas_item_add_texture_rect_region(RID p_item, const Rect2 & p_rect, RID p_texture, const Rect2 & p_src_rect, const Color & p_modulate, bool p_transpose, bool p_clip_uv)  {
 	auto item = m_objectManager.resolve<FilamentCanvasItem>(p_item);
 	if(item) {
-		item->getMaterialGroup(p_texture)->addTextureRectRegion(p_rect, p_src_rect, p_modulate, p_transpose, p_clip_uv);
+		item->addTextureRectRegion(p_texture, p_rect, p_src_rect, p_modulate, p_transpose, p_clip_uv);
 	}
 };
 
@@ -1994,7 +1993,7 @@ void FilamentRenderingServerBackend::canvas_item_add_triangle_array(RID p_item, 
 
 	auto item = m_objectManager.resolve<FilamentCanvasItem>(p_item);
 	if(item) {
-		item->getMaterialGroup(p_texture)->addTriangleArray(p_indices, p_points, p_colors, p_uvs, p_bones, p_weights);
+		item->addTriangleArray(p_texture, p_indices, p_points, p_colors, p_uvs, p_bones, p_weights);
 	}
 }
 

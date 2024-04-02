@@ -40,10 +40,6 @@ void FilamentCanvasRenderOrderCollector::finalize() {
 		itemBlendOrders[m_items[index].inOrderDrawingIndex] = index;
 	}
 
-	/*
-	 * TODO: blend order value needs to be relative to the parent
-	 */
-
 	for(size_t drawingIndex = 0, count = m_items.size(); drawingIndex < count; drawingIndex++) {
 		const auto &data = m_items[drawingIndex];
 

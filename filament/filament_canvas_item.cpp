@@ -4,8 +4,9 @@
 #include "filament/filament_entity_object.h"
 #include "filament/filament_scenario_object.h"
 #include "filament/filament_rendering_server_backend.h"
-#include "filament/filament_canvas_item_material_group.h"
 #include "filament/filament_canvas_render_order_collector.h"
+#include "filament/filament_canvas_element_texture_rect.h"
+#include "filament/filament_canvas_element_triangle_array.h"
 
 #include <filament/Scene.h>
 #include <filament/Engine.h>
@@ -93,20 +94,69 @@ void FilamentCanvasItem::beforeGeometryChange() {
 void FilamentCanvasItem::clear() {
 	beforeGeometryChange();
 
-	m_materialGroups.clear();
+	m_elements.clear();
 }
 
-FilamentCanvasItemMaterialGroup *FilamentCanvasItem::getMaterialGroup(const RID &texture) {
+FilamentCanvasElementTextureRect *FilamentCanvasItem::createOrReuseTextureRect(RID texture) {
+	if(!m_elements.empty() &&
+		m_elements.back()->type() == FilamentCanvasElement::Type::TextureRect &&
+		m_elements.back()->texture() == texture) {
+
+		return static_cast<FilamentCanvasElementTextureRect *>(m_elements.back().get());
+	} else {
+		return static_cast<FilamentCanvasElementTextureRect *>(
+			m_elements.emplace_back(std::make_unique<FilamentCanvasElementTextureRect>(
+				static_cast<FilamentControlledObjectReferenceOwner *>(this), texture)).get()
+		);
+	}
+}
+
+
+void FilamentCanvasItem::addTextureRect(
+	RID texture,
+	const Rect2 & p_rect,
+	bool p_tile,
+	const Color & p_modulate,
+	bool p_transpose) {
+
 	beforeGeometryChange();
 
-	for(const auto &group: m_materialGroups) {
-		if(group->texture() == texture) {
-			return group.get();
-		}
-	}
+	createOrReuseTextureRect(texture)->addTextureRect(p_rect,  p_tile, p_modulate, p_transpose);
+}
 
-	return m_materialGroups.emplace_back(std::make_unique<FilamentCanvasItemMaterialGroup>(
-		static_cast<FilamentControlledObjectReferenceOwner *>(this), texture)).get();
+void FilamentCanvasItem::addTextureRectRegion(
+	RID texture,
+	const Rect2 & p_rect,
+	const Rect2 & p_src_rect,
+	const Color & p_modulate,
+	bool p_transpose,
+	bool p_clip_uv) {
+
+	beforeGeometryChange();
+
+	createOrReuseTextureRect(texture)->addTextureRectRegion(p_rect, p_src_rect, p_modulate, p_transpose, p_clip_uv);
+}
+
+void FilamentCanvasItem::addTriangleArray(
+	RID texture,
+	const Vector<int> & p_indices,
+	const Vector<Point2> & p_points,
+	const Vector<Color> & p_colors,
+	const Vector<Point2> & p_uvs,
+	const Vector<int> & p_bones,
+	const Vector<float> & p_weights) {
+
+	beforeGeometryChange();
+
+	m_elements.emplace_back(std::make_unique<FilamentCanvasElementTriangleArray>(
+		static_cast<FilamentControlledObjectReferenceOwner *>(this),
+		texture,
+		p_indices,
+		p_points,
+		p_colors,
+		p_uvs,
+		p_bones,
+		p_weights));
 }
 
 void FilamentCanvasItem::controlledObjectAboutToInvalidate(FilamentControlledObjectReferenceBase *linkedViaReference) {
@@ -122,10 +172,7 @@ void FilamentCanvasItem::doClean() {
 
 	auto engine = FilamentRenderingServerBackend::filamentEngine();
 
-	size_t primitiveCount = 0;
-	for(const auto &elementPtr: m_materialGroups) {
-		primitiveCount += elementPtr->numberOfPrimitives();
-	}
+	size_t primitiveCount = m_elements.size();
 
 	if(primitiveCount == 0) {
 		printf("FilamentCanvasItem %p: empty, will not draw\n", this);
@@ -135,8 +182,10 @@ void FilamentCanvasItem::doClean() {
 	filament::RenderableManager::Builder builder(primitiveCount);
 	auto firstPrimitive = 0;
 
-	for(const auto &elementPtr: m_materialGroups) {
-		firstPrimitive += elementPtr->build(builder, firstPrimitive);
+	for(const auto &elementPtr: m_elements) {
+		elementPtr->build(builder, firstPrimitive);
+		builder.blendOrder(firstPrimitive, std::min<size_t>(firstPrimitive, 32767));
+		firstPrimitive++;
 	}
 
 	builder.culling(false);
