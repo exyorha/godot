@@ -7,8 +7,11 @@
 
 #include <filament/RenderableManager.h>
 
+#include <optional>
+
 class FilamentTextureReferenceObject;
 class FilamentMaterialObject;
+struct Rect2i;
 
 namespace filament {
 	class MaterialInstance;
@@ -35,6 +38,8 @@ public:
 	}
 
 	virtual void build(filament::RenderableManager::Builder &builder, size_t index) = 0;
+
+	void setScissor(const std::optional<Rect2i> &scissor);
 
 protected:
 	filament::MaterialInstance *material() const;

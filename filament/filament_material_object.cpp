@@ -67,6 +67,13 @@ void FilamentMaterialObject::doClean() {
 
 	if(m_material) {
 		m_properties.apply(m_material.get());
+
+		if(m_scissor.has_value()) {
+			m_material->setScissor(m_scissor->position.x, m_scissor->position.y, m_scissor->size.width, m_scissor->size.height);
+		} else {
+
+			m_material->unsetScissor();
+		}
 	}
 }
 
@@ -138,4 +145,10 @@ void FilamentMaterialObject::setParam(const StringName &name, const Variant &val
 	m_properties.setParam(name, value);
 
 	recalculateDerivedMaterials();
+}
+
+void FilamentMaterialObject::setScissor(const std::optional<Rect2i> &scissor) {
+	m_scissor = scissor;
+
+	markDirty();
 }

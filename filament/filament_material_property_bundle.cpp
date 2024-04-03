@@ -65,6 +65,33 @@ void FilamentMaterialPropertyBundle::apply(filament::MaterialInstance *materialI
 				break;
 			}
 
+			case Variant::FLOAT:
+			{
+				materialInstance->setParameter(key.ptr(), key.length(), static_cast<float>(value));
+				break;
+			}
+
+			case Variant::VECTOR2:
+			{
+				Vector2 vec(value);
+				materialInstance->setParameter(key.ptr(), key.length(), filament::math::float2(vec.x, vec.y));
+				break;
+			}
+
+			case Variant::VECTOR3:
+			{
+				Vector3 vec(value);
+				materialInstance->setParameter(key.ptr(), key.length(), filament::math::float3(vec.x, vec.y, vec.z));
+				break;
+			}
+
+			case Variant::VECTOR4:
+			{
+				Vector4 vec(value);
+				materialInstance->setParameter(key.ptr(), key.length(), filament::math::float4(vec.x, vec.y, vec.z, vec.w));
+				break;
+			}
+
 			default:
 				fprintf(stderr, "FilamentMaterialPropertyBundle::apply: unsupported value %s of type %d, applying onto %s\n", key.ptr(), static_cast<int32_t>(value.get_type()), materialInstance->getName());
 		}

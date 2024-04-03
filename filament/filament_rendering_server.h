@@ -9,9 +9,16 @@
 class FilamentDisplayServerContext;
 
 class FilamentRenderingServer final : public RenderingServer, protected ThreadedExecutionQueue<FilamentRenderingServerBackend> {
+
+	GDCLASS(FilamentRenderingServer, RenderingServer)
+
+protected:
+	static void _bind_methods();
+
 public:
 	FilamentRenderingServer();
 	~FilamentRenderingServer() override;
+
 
 	// RenderingServer API
 	RID texture_2d_create(const Ref<Image> & p_image)  override;
@@ -42,6 +49,7 @@ public:
 	uint64_t texture_get_native_handle(RID p_texture, bool p_srgb) const override;
 	RID shader_create()  override;
 	void shader_set_code(RID p_shader, const String & p_code)  override;
+	void shader_set_package(RID p_shader, const Vector<uint8_t> &p_package); // FILAMENT PRIVATE
 	void shader_set_path_hint(RID p_shader, const String & p_path)  override;
 	String shader_get_code(RID p_shader) const override;
 	void get_shader_parameter_list(RID p_shader, List<PropertyInfo> * p_param_list) const override;

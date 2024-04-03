@@ -122,6 +122,7 @@
 
 #ifdef FILAMENT_ENABLED
 #include "filament/filament_rendering_server.h"
+#include "filament/register_filament_types.h"
 #endif
 
 /* Static members */
@@ -608,6 +609,9 @@ Error Main::test_setup() {
 	initialize_theme_db();
 
 	register_scene_types();
+#if defined(FILAMENT_ENABLED)
+	register_filament_types();
+#endif
 	register_driver_types();
 
 	register_scene_singletons();
@@ -685,6 +689,9 @@ void Main::test_cleanup() {
 
 	unregister_platform_apis();
 	unregister_driver_types();
+#if defined(FILAMENT_ENABLED)
+	unregister_filament_types();
+#endif
 	unregister_scene_types();
 
 	finalize_theme_db();
@@ -2735,6 +2742,9 @@ Error Main::setup2() {
 	initialize_theme_db();
 
 	register_scene_types();
+#if defined(FILAMENT_ENABLED)
+	register_filament_types();
+#endif
 	register_driver_types();
 
 	register_scene_singletons();
@@ -3855,6 +3865,9 @@ void Main::cleanup(bool p_force) {
 
 	unregister_platform_apis();
 	unregister_driver_types();
+#if defined(FILAMENT_ENABLED)
+	unregister_filament_types();
+#endif
 	unregister_scene_types();
 
 	finalize_theme_db();

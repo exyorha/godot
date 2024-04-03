@@ -8,6 +8,7 @@
 #include <core/math/vector2.h>
 #include <core/templates/rid.h>
 #include <core/math/transform_2d.h>
+#include <core/math/rect2i.h>
 
 #include <filament/RenderableManager.h>
 
@@ -88,9 +89,20 @@ public:
 
 	void setDrawIndex(int32_t drawIndex);
 
+	inline bool clip() const {
+		return m_clip;
+	}
+
+	void setClip(bool clip);
+
+	std::optional<Rect2i> calculateClipRectangle(const std::optional<Rect2i> &childRectangle) const override;
+
+	void setCustomRectangle(const std::optional<Rect2i> &customRectangle);
+
 protected:
 	int32_t calculateZOrder(int32_t parentZOrder) const override;
 	std::optional<size_t> collectSelf(FilamentCanvasRenderOrderCollector &collector, int32_t calculatedZOrder) override;
+	void updateSelfClipping() override;
 
 private:
 
@@ -114,9 +126,11 @@ private:
 	int32_t m_zIndex;
 	bool m_zRelativeToParent;
 	bool m_drawBehindParent;
+	bool m_clip;
 	float m_blendOrder;
 	int32_t m_drawIndex;
 	Transform2D m_transform;
+	std::optional<Rect2i> m_customRectangle;
 };
 
 #endif

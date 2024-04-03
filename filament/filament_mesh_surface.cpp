@@ -82,7 +82,7 @@ FilamentMeshSurface::FilamentMeshSurface(FilamentControlledObjectReferenceOwner 
 	}
 
 	m_boundingBox.center = filament::math::float3(data.aabb.position.x, data.aabb.position.y, data.aabb.position.z);
-	m_boundingBox.halfExtent = filament::math::float3(data.aabb.size.x * 0.5f, data.aabb.size.y * 0.5f, data.aabb.size.z * 0.5f);
+	m_boundingBox.halfExtent = filament::math::float3(data.aabb.size.x, data.aabb.size.y, data.aabb.size.z);
 
 	m_material = FilamentRenderingServerBackend::get()->objects().resolve<FilamentMaterialObject>(data.material);
 }

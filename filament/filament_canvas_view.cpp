@@ -26,7 +26,10 @@ FilamentCanvasView::FilamentCanvasView(const std::shared_ptr<FilamentCanvas> &ca
 FilamentCanvasView::~FilamentCanvasView() = default;
 
 void FilamentCanvasView::render(filament::Renderer *renderer, filament::RenderTarget *renderTarget, const filament::Viewport &viewport,
-								bool standalone, bool yFlip) {
+								bool standalone, bool yFlip, const Size2i &size) {
+
+	m_canvas->setDrawingViewport(size, viewport, yFlip);
+
 	double bottom = viewport.height;
 	double top = 0;
 

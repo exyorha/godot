@@ -94,3 +94,18 @@ std::optional<size_t> FilamentCanvasItemContainer::collectSelf(FilamentCanvasRen
 	(void)calculatedZOrder;
 	return std::nullopt;
 }
+
+void FilamentCanvasItemContainer::updateSelfClipping() {
+
+}
+
+void FilamentCanvasItemContainer::updateClipping() {
+	updateSelfClipping();
+
+	for(const auto &weakChild: children()) {
+		auto child = weakChild.lock();
+		if(child) {
+			child->updateClipping();
+		}
+	}
+}

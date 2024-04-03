@@ -37,9 +37,17 @@
 #include "scene/resources/texture.h"
 #include "shader_include.h"
 
-class Shader : public Resource {
-	GDCLASS(Shader, Resource);
-	OBJ_SAVE_TYPE(Shader);
+class BaseShader : public Resource {
+	GDCLASS(BaseShader, Resource)
+
+protected:
+	static void _bind_methods();
+
+private:
+	RID shader;
+	HashMap<StringName, HashMap<int, Ref<Texture2D>>> default_textures;
+
+	Array _get_shader_uniform_list(bool p_get_groups = false);
 
 public:
 	enum Mode {
@@ -51,32 +59,14 @@ public:
 		MODE_MAX
 	};
 
-private:
-	RID shader;
-	Mode mode = MODE_SPATIAL;
-	HashSet<Ref<ShaderInclude>> include_dependencies;
-	String code;
-	String include_path;
-
-	HashMap<StringName, HashMap<int, Ref<Texture2D>>> default_textures;
-
-	void _dependency_changed();
-	void _recompile();
-	virtual void _update_shader() const; //used for visual shader
-	Array _get_shader_uniform_list(bool p_get_groups = false);
-
-protected:
-	static void _bind_methods();
-
-public:
-	//void set_mode(Mode p_mode);
-	virtual Mode get_mode() const;
+	BaseShader();
+	~BaseShader();
 
 	virtual void set_path(const String &p_path, bool p_take_over = false) override;
-	void set_include_path(const String &p_path);
 
-	void set_code(const String &p_code);
-	String get_code() const;
+	virtual Mode get_mode() const;
+
+	virtual RID get_rid() const override;
 
 	void get_shader_uniform_list(List<PropertyInfo> *p_params, bool p_get_groups = false) const;
 
@@ -84,15 +74,46 @@ public:
 	Ref<Texture2D> get_default_texture_parameter(const StringName &p_name, int p_index = 0) const;
 	void get_default_texture_parameter_list(List<StringName> *r_textures) const;
 
-	virtual bool is_text_shader() const;
+protected:
+	virtual void _update_shader() const; //used for visual shader
 
-	virtual RID get_rid() const override;
+	inline RID shader_rid() const {
+		return shader;
+	}
+};
+
+class Shader : public BaseShader {
+	GDCLASS(Shader, BaseShader);
+	OBJ_SAVE_TYPE(Shader);
+
+private:
+	Mode mode = MODE_SPATIAL;
+	HashSet<Ref<ShaderInclude>> include_dependencies;
+	String code;
+	String include_path;
+
+	void _dependency_changed();
+	void _recompile();
+
+protected:
+	static void _bind_methods();
+
+public:
+	//void set_mode(Mode p_mode);
+	virtual Mode get_mode() const override;
+
+	void set_include_path(const String &p_path);
+
+	void set_code(const String &p_code);
+	String get_code() const;
+
+	virtual bool is_text_shader() const;
 
 	Shader();
 	~Shader();
 };
 
-VARIANT_ENUM_CAST(Shader::Mode);
+VARIANT_ENUM_CAST(BaseShader::Mode);
 
 class ResourceFormatLoaderShader : public ResourceFormatLoader {
 public:

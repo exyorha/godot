@@ -84,6 +84,8 @@ void FilamentMesh::setSurfaceMaterial(size_t index, const std::shared_ptr<Filame
 		return;
 	}
 
+	objectAboutToInvalidate();
+
 	m_surfaces[index].setMaterial(material);
 }
 

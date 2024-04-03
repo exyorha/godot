@@ -19,3 +19,8 @@ FilamentCanvasElement::~FilamentCanvasElement() = default;
 filament::MaterialInstance *FilamentCanvasElement::material() const {
 	return m_material->materialInstance();
 }
+
+void FilamentCanvasElement::setScissor(const std::optional<Rect2i> &scissor) {
+	m_material->setScissor(scissor);
+}
+

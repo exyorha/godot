@@ -12,7 +12,7 @@
 #include <filament/Engine.h>
 
 FilamentCanvasItem::FilamentCanvasItem() : m_visible(true), m_zIndex(0), m_zRelativeToParent(true), m_drawBehindParent(false),
-	m_blendOrder(0), m_drawIndex(0) {
+	m_clip(false), m_blendOrder(0), m_drawIndex(0) {
 
 }
 
@@ -55,6 +55,8 @@ void FilamentCanvasItem::setParent(const std::shared_ptr<FilamentCanvasItemConta
 		if(canvas) {
 			canvas->renderingOrderChanged();
 		}
+
+		updateClipping();
 	}
 }
 
@@ -201,11 +203,14 @@ void FilamentCanvasItem::doClean() {
 	if(result != decltype(result)::Success) {
 		throw std::runtime_error("failed to build the canvas item renderable");
 	}
+
+	updateSelfClipping();
 }
 
 void FilamentCanvasItem::setTransform(const Transform2D &transform) {
 	m_transform = transform;
 	updateTransform();
+	updateClipping();
 }
 
 void FilamentCanvasItem::updateTransform() {
@@ -302,3 +307,68 @@ void FilamentCanvasItem::setDrawIndex(int32_t drawIndex) {
 		}
 	}
 }
+
+void FilamentCanvasItem::setClip(bool clip) {
+	if(m_clip != clip) {
+		m_clip = clip;
+
+		updateClipping();
+	}
+}
+
+void FilamentCanvasItem::updateSelfClipping() {
+	if(isDirty()) {
+		return;
+	}
+
+	auto canvas = m_owningCanvas.lock();
+	if(!canvas) {
+		return;
+	}
+
+	auto scissor = calculateClipRectangle(std::nullopt);
+	if(scissor.has_value()) {
+		*scissor = canvas->clipRectangleToScissorRectangle(*scissor);
+	}
+
+	for(const auto &elementPtr: m_elements) {
+		elementPtr->setScissor(scissor);
+	}
+}
+
+std::optional<Rect2i> FilamentCanvasItem::calculateClipRectangle(const std::optional<Rect2i> &childRectangle) const {
+	std::optional<Rect2i> outerRect = m_customRectangle;
+	std::optional<Rect2i> innerRect = childRectangle;
+
+
+	std::optional<Rect2i> finalRect;
+	if(outerRect.has_value() && innerRect.has_value()) {
+		finalRect = outerRect->intersection(*innerRect);
+	} else if(outerRect.has_value()) {
+		finalRect = outerRect;
+	} else {
+		finalRect = innerRect;
+	}
+
+	if(finalRect.has_value()) {
+		*finalRect = m_transform.xform(*finalRect);
+	}
+
+	auto parent = m_parent.lock();
+	if(parent) {
+		return parent->calculateClipRectangle(finalRect);
+	} else {
+		return finalRect;
+	}
+}
+
+void FilamentCanvasItem::setCustomRectangle(const std::optional<Rect2i> &customRectangle) {
+	if(m_customRectangle != customRectangle) {
+		m_customRectangle = customRectangle;
+
+		if(m_clip) {
+			updateClipping();
+		}
+	}
+}
+

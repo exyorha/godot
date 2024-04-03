@@ -56,9 +56,10 @@ public:
 	uint64_t texture_get_native_handle(RID p_texture, bool p_srgb) const;
 	void shader_create(RID output) ;
 	void shader_set_code(RID p_shader, const String & p_code) ;
+	void shader_set_package(RID p_shader, const Vector<uint8_t> &p_package);
 	void shader_set_path_hint(RID p_shader, const String & p_path) ;
 	String shader_get_code(RID p_shader) const;
-	void get_shader_parameter_list(RID p_shader, List<PropertyInfo> * p_param_list) const;
+	bool get_shader_parameter_list(RID p_shader, List<PropertyInfo> * p_param_list) const;
 	Variant shader_get_parameter_default(RID p_shader, const StringName & p_param) const;
 	void shader_set_default_texture_parameter(RID p_shader, const StringName & p_name, RID p_texture, int p_index) ;
 	RID shader_get_default_texture_parameter(RID p_shader, const StringName & p_name, int p_index) const;

@@ -37,6 +37,120 @@
 #include "servers/rendering_server.h"
 #include "texture.h"
 
+BaseShader::BaseShader() {
+	shader = RenderingServer::get_singleton()->shader_create();
+}
+
+BaseShader::~BaseShader() {
+	ERR_FAIL_NULL(RenderingServer::get_singleton());
+	RenderingServer::get_singleton()->free(shader);
+}
+
+Array BaseShader::_get_shader_uniform_list(bool p_get_groups) {
+	List<PropertyInfo> uniform_list;
+	get_shader_uniform_list(&uniform_list, p_get_groups);
+	Array ret;
+	for (const PropertyInfo &pi : uniform_list) {
+		ret.push_back(pi.operator Dictionary());
+	}
+	return ret;
+}
+
+BaseShader::Mode BaseShader::get_mode() const {
+	return MODE_SPATIAL;
+}
+
+void BaseShader::_bind_methods() {
+
+	ClassDB::bind_method(D_METHOD("get_mode"), &BaseShader::get_mode);
+
+	ClassDB::bind_method(D_METHOD("set_default_texture_parameter", "name", "texture", "index"), &BaseShader::set_default_texture_parameter, DEFVAL(0));
+	ClassDB::bind_method(D_METHOD("get_default_texture_parameter", "name", "index"), &BaseShader::get_default_texture_parameter, DEFVAL(0));
+
+	ClassDB::bind_method(D_METHOD("get_shader_uniform_list", "get_groups"), &BaseShader::_get_shader_uniform_list, DEFVAL(false));
+
+	BIND_ENUM_CONSTANT(MODE_SPATIAL);
+	BIND_ENUM_CONSTANT(MODE_CANVAS_ITEM);
+	BIND_ENUM_CONSTANT(MODE_PARTICLES);
+	BIND_ENUM_CONSTANT(MODE_SKY);
+	BIND_ENUM_CONSTANT(MODE_FOG);
+}
+
+void BaseShader::set_path(const String &p_path, bool p_take_over) {
+	Resource::set_path(p_path, p_take_over);
+	RS::get_singleton()->shader_set_path_hint(shader, p_path);
+}
+
+void BaseShader::_update_shader() const {
+
+}
+
+RID BaseShader::get_rid() const {
+	_update_shader();
+
+	return shader;
+}
+
+void BaseShader::get_shader_uniform_list(List<PropertyInfo> *p_params, bool p_get_groups) const {
+	_update_shader();
+
+	List<PropertyInfo> local;
+	RenderingServer::get_singleton()->get_shader_parameter_list(shader, &local);
+
+	for (PropertyInfo &pi : local) {
+		bool is_group = pi.usage == PROPERTY_USAGE_GROUP || pi.usage == PROPERTY_USAGE_SUBGROUP;
+		if (!p_get_groups && is_group) {
+			continue;
+		}
+		if (!is_group) {
+			if (default_textures.has(pi.name)) { //do not show default textures
+				continue;
+			}
+		}
+		if (p_params) {
+			//small little hack
+			if (pi.type == Variant::RID) {
+				pi.type = Variant::OBJECT;
+			}
+			p_params->push_back(pi);
+		}
+	}
+}
+
+void BaseShader::set_default_texture_parameter(const StringName &p_name, const Ref<Texture2D> &p_texture, int p_index) {
+	if (p_texture.is_valid()) {
+		if (!default_textures.has(p_name)) {
+			default_textures[p_name] = HashMap<int, Ref<Texture2D>>();
+		}
+		default_textures[p_name][p_index] = p_texture;
+		RS::get_singleton()->shader_set_default_texture_parameter(shader, p_name, p_texture->get_rid(), p_index);
+	} else {
+		if (default_textures.has(p_name) && default_textures[p_name].has(p_index)) {
+			default_textures[p_name].erase(p_index);
+
+			if (default_textures[p_name].is_empty()) {
+				default_textures.erase(p_name);
+			}
+		}
+		RS::get_singleton()->shader_set_default_texture_parameter(shader, p_name, RID(), p_index);
+	}
+
+	emit_changed();
+}
+
+Ref<Texture2D> BaseShader::get_default_texture_parameter(const StringName &p_name, int p_index) const {
+	if (default_textures.has(p_name) && default_textures[p_name].has(p_index)) {
+		return default_textures[p_name][p_index];
+	}
+	return Ref<Texture2D>();
+}
+
+void BaseShader::get_default_texture_parameter_list(List<StringName> *r_textures) const {
+	for (const KeyValue<StringName, HashMap<int, Ref<Texture2D>>> &E : default_textures) {
+		r_textures->push_back(E.key);
+	}
+}
+
 Shader::Mode Shader::get_mode() const {
 	return mode;
 }
@@ -48,11 +162,6 @@ void Shader::_dependency_changed() {
 
 void Shader::_recompile() {
 	set_code(get_code());
-}
-
-void Shader::set_path(const String &p_path, bool p_take_over) {
-	Resource::set_path(p_path, p_take_over);
-	RS::get_singleton()->shader_set_path_hint(shader, p_path);
 }
 
 void Shader::set_include_path(const String &p_path) {
@@ -105,7 +214,7 @@ void Shader::set_code(const String &p_code) {
 		E->connect_changed(callable_mp(this, &Shader::_dependency_changed));
 	}
 
-	RenderingServer::get_singleton()->shader_set_code(shader, pp_code);
+	RenderingServer::get_singleton()->shader_set_code(shader_rid(), pp_code);
 
 	emit_changed();
 }
@@ -115,116 +224,23 @@ String Shader::get_code() const {
 	return code;
 }
 
-void Shader::get_shader_uniform_list(List<PropertyInfo> *p_params, bool p_get_groups) const {
-	_update_shader();
-
-	List<PropertyInfo> local;
-	RenderingServer::get_singleton()->get_shader_parameter_list(shader, &local);
-
-	for (PropertyInfo &pi : local) {
-		bool is_group = pi.usage == PROPERTY_USAGE_GROUP || pi.usage == PROPERTY_USAGE_SUBGROUP;
-		if (!p_get_groups && is_group) {
-			continue;
-		}
-		if (!is_group) {
-			if (default_textures.has(pi.name)) { //do not show default textures
-				continue;
-			}
-		}
-		if (p_params) {
-			//small little hack
-			if (pi.type == Variant::RID) {
-				pi.type = Variant::OBJECT;
-			}
-			p_params->push_back(pi);
-		}
-	}
-}
-
-RID Shader::get_rid() const {
-	_update_shader();
-
-	return shader;
-}
-
-void Shader::set_default_texture_parameter(const StringName &p_name, const Ref<Texture2D> &p_texture, int p_index) {
-	if (p_texture.is_valid()) {
-		if (!default_textures.has(p_name)) {
-			default_textures[p_name] = HashMap<int, Ref<Texture2D>>();
-		}
-		default_textures[p_name][p_index] = p_texture;
-		RS::get_singleton()->shader_set_default_texture_parameter(shader, p_name, p_texture->get_rid(), p_index);
-	} else {
-		if (default_textures.has(p_name) && default_textures[p_name].has(p_index)) {
-			default_textures[p_name].erase(p_index);
-
-			if (default_textures[p_name].is_empty()) {
-				default_textures.erase(p_name);
-			}
-		}
-		RS::get_singleton()->shader_set_default_texture_parameter(shader, p_name, RID(), p_index);
-	}
-
-	emit_changed();
-}
-
-Ref<Texture2D> Shader::get_default_texture_parameter(const StringName &p_name, int p_index) const {
-	if (default_textures.has(p_name) && default_textures[p_name].has(p_index)) {
-		return default_textures[p_name][p_index];
-	}
-	return Ref<Texture2D>();
-}
-
-void Shader::get_default_texture_parameter_list(List<StringName> *r_textures) const {
-	for (const KeyValue<StringName, HashMap<int, Ref<Texture2D>>> &E : default_textures) {
-		r_textures->push_back(E.key);
-	}
-}
-
 bool Shader::is_text_shader() const {
 	return true;
 }
 
-void Shader::_update_shader() const {
-}
-
-Array Shader::_get_shader_uniform_list(bool p_get_groups) {
-	List<PropertyInfo> uniform_list;
-	get_shader_uniform_list(&uniform_list, p_get_groups);
-	Array ret;
-	for (const PropertyInfo &pi : uniform_list) {
-		ret.push_back(pi.operator Dictionary());
-	}
-	return ret;
-}
-
 void Shader::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("get_mode"), &Shader::get_mode);
-
 	ClassDB::bind_method(D_METHOD("set_code", "code"), &Shader::set_code);
 	ClassDB::bind_method(D_METHOD("get_code"), &Shader::get_code);
 
-	ClassDB::bind_method(D_METHOD("set_default_texture_parameter", "name", "texture", "index"), &Shader::set_default_texture_parameter, DEFVAL(0));
-	ClassDB::bind_method(D_METHOD("get_default_texture_parameter", "name", "index"), &Shader::get_default_texture_parameter, DEFVAL(0));
-
-	ClassDB::bind_method(D_METHOD("get_shader_uniform_list", "get_groups"), &Shader::_get_shader_uniform_list, DEFVAL(false));
-
 	ADD_PROPERTY(PropertyInfo(Variant::STRING, "code", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR), "set_code", "get_code");
-
-	BIND_ENUM_CONSTANT(MODE_SPATIAL);
-	BIND_ENUM_CONSTANT(MODE_CANVAS_ITEM);
-	BIND_ENUM_CONSTANT(MODE_PARTICLES);
-	BIND_ENUM_CONSTANT(MODE_SKY);
-	BIND_ENUM_CONSTANT(MODE_FOG);
 }
 
 Shader::Shader() {
-	shader = RenderingServer::get_singleton()->shader_create();
+
 }
 
 Shader::~Shader() {
-	ERR_FAIL_NULL(RenderingServer::get_singleton());
-	RenderingServer::get_singleton()->free(shader);
+
 }
 
 ////////////
@@ -262,7 +278,7 @@ void ResourceFormatLoaderShader::get_recognized_extensions(List<String> *p_exten
 }
 
 bool ResourceFormatLoaderShader::handles_type(const String &p_type) const {
-	return (p_type == "Shader");
+	return ClassDB::is_parent_class("Shader", p_type);
 }
 
 String ResourceFormatLoaderShader::get_resource_type(const String &p_path) const {
@@ -301,5 +317,5 @@ void ResourceFormatSaverShader::get_recognized_extensions(const Ref<Resource> &p
 }
 
 bool ResourceFormatSaverShader::recognize(const Ref<Resource> &p_resource) const {
-	return p_resource->get_class_name() == "Shader"; //only shader, not inherited
+	return ClassDB::is_parent_class("Shader", p_resource->get_class_name()); //only shader and its base types, not inherited
 }

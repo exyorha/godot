@@ -94,7 +94,7 @@ class BaseMaterial3D;
 
 class ShaderMaterial : public Material {
 	GDCLASS(ShaderMaterial, Material);
-	Ref<Shader> shader;
+	Ref<BaseShader> shader;
 	Ref<BaseMaterial3D> voxelgi_placeholder;
 
 	mutable HashMap<StringName, StringName> remap_cache;
@@ -117,8 +117,8 @@ protected:
 	void _shader_changed();
 
 public:
-	void set_shader(const Ref<Shader> &p_shader);
-	Ref<Shader> get_shader() const;
+	void set_shader(const Ref<BaseShader> &p_shader);
+	Ref<BaseShader> get_shader() const;
 
 	void set_shader_parameter(const StringName &p_param, const Variant &p_value);
 	Variant get_shader_parameter(const StringName &p_param) const;

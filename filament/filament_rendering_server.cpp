@@ -9,6 +9,10 @@ FilamentRenderingServer::FilamentRenderingServer() : m_registerer(this) {
 
 FilamentRenderingServer::~FilamentRenderingServer() = default;
 
+void FilamentRenderingServer::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("shader_set_package", "shader", "package"), &FilamentRenderingServer::shader_set_package);
+}
+
 FilamentRenderingServer::Registerer::Registerer(FilamentRenderingServer *server) {
 	m_instance = server;
 }
@@ -166,6 +170,10 @@ void FilamentRenderingServer::shader_set_code(RID p_shader, const String & p_cod
 	return execute<void, RID, const String &>(&FilamentRenderingServerBackend::shader_set_code, p_shader, p_code);
 };
 
+void FilamentRenderingServer::shader_set_package(RID p_shader, const Vector<uint8_t> &p_package) {
+	return execute<void, RID, const Vector<uint8_t> &>(&FilamentRenderingServerBackend::shader_set_package, p_shader, p_package);
+}
+
 void FilamentRenderingServer::shader_set_path_hint(RID p_shader, const String & p_path)  {
 	return execute<void, RID, const String &>(&FilamentRenderingServerBackend::shader_set_path_hint, p_shader, p_path);
 };
@@ -175,7 +183,7 @@ String FilamentRenderingServer::shader_get_code(RID p_shader) const {
 };
 
 void FilamentRenderingServer::get_shader_parameter_list(RID p_shader, List<PropertyInfo> * p_param_list) const {
-	return execute<void, RID, List<PropertyInfo> *>(&FilamentRenderingServerBackend::get_shader_parameter_list, p_shader, p_param_list);
+	execute<bool, RID, List<PropertyInfo> *>(&FilamentRenderingServerBackend::get_shader_parameter_list, p_shader, p_param_list);
 };
 
 Variant FilamentRenderingServer::shader_get_parameter_default(RID p_shader, const StringName & p_param) const {

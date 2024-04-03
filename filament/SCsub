@@ -103,7 +103,9 @@ sources = [
     "filament_vertex_format.cpp",
     "filament_viewport_object.cpp",
     "filament_window.cpp",
-    "threaded_execution_queue.cpp"
+    "register_filament_types.cpp",
+    "threaded_execution_queue.cpp",
+    "resources/filament_material.cpp"
 ]
 
 env_filament = env.Clone()

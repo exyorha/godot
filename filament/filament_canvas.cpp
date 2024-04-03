@@ -5,7 +5,9 @@
 #include "filament/filament_canvas_item.h"
 #include "filament/filament_canvas_render_order_collector.h"
 
-FilamentCanvas::FilamentCanvas() {
+#include "core/math/rect2i.h"
+
+FilamentCanvas::FilamentCanvas() : m_yFlip(false) {
 	m_backingScene = std::make_shared<FilamentScenarioObject>();
 }
 
@@ -38,8 +40,6 @@ bool FilamentCanvas::isEffectivelyVisible() const {
 }
 
 void FilamentCanvas::doClean() {
-	printf("FilamentCanvas(%p): recalculating the render order\n", this);
-
 	FilamentCanvasRenderOrderCollector renderOrderCollector;
 
 	int32_t parentZOrder = 0;
@@ -47,3 +47,31 @@ void FilamentCanvas::doClean() {
 
 	renderOrderCollector.finalize();
 }
+
+std::optional<Rect2i> FilamentCanvas::calculateClipRectangle(const std::optional<Rect2i> &childRect) const {
+	return childRect;
+}
+
+void FilamentCanvas::setDrawingViewport(const Size2i &windowSize, const filament::Viewport &viewport, bool yFlip) {
+	if(!m_windowSize.has_value() || windowSize != *m_windowSize || !m_viewport.has_value() || viewport != *m_viewport || yFlip != m_yFlip) {
+		m_windowSize.emplace(windowSize);
+		m_viewport.emplace(viewport);
+		m_yFlip = yFlip;
+
+		updateClipping();
+	}
+}
+
+Rect2i FilamentCanvas::clipRectangleToScissorRectangle(const Rect2i &clip) const {
+	if(m_yFlip) {
+		return clip;
+	}
+
+	if(!m_windowSize.has_value() || !m_viewport.has_value()) {
+		return Rect2i();
+	}
+
+	return Rect2i(clip.position.x + m_viewport->left, m_windowSize->height - (clip.position.y + m_viewport->bottom + clip.size.height),
+				  clip.size.width, clip.size.height);
+}
+

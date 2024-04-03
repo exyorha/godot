@@ -380,7 +380,7 @@ bool ShaderMaterial::_property_get_revert(const StringName &p_name, Variant &r_p
 	return false;
 }
 
-void ShaderMaterial::set_shader(const Ref<Shader> &p_shader) {
+void ShaderMaterial::set_shader(const Ref<BaseShader> &p_shader) {
 	// Only connect/disconnect the signal when running in the editor.
 	// This can be a slow operation, and `notify_property_list_changed()` (which is called by `_shader_changed()`)
 	// does nothing in non-editor builds anyway. See GH-34741 for details.
@@ -404,7 +404,7 @@ void ShaderMaterial::set_shader(const Ref<Shader> &p_shader) {
 	emit_changed();
 }
 
-Ref<Shader> ShaderMaterial::get_shader() const {
+Ref<BaseShader> ShaderMaterial::get_shader() const {
 	return shader;
 }
 
@@ -464,7 +464,7 @@ void ShaderMaterial::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_voxelgi_placeholder", "placeholder"), &ShaderMaterial::set_voxelgi_placeholder);
 	ClassDB::bind_method(D_METHOD("get_voxelgi_placeholder"), &ShaderMaterial::get_voxelgi_placeholder);
 
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "shader", PROPERTY_HINT_RESOURCE_TYPE, "Shader"), "set_shader", "get_shader");
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "shader", PROPERTY_HINT_RESOURCE_TYPE, "BaseShader"), "set_shader", "get_shader");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "voxelgi_placeholder", PROPERTY_HINT_RESOURCE_TYPE, "BaseMaterial3D"), "set_voxelgi_placeholder", "get_voxelgi_placeholder");
 }
 

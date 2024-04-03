@@ -5,6 +5,8 @@
 
 #include <filament/filament_engine_object.h>
 
+#include "core/math/vector2i.h"
+
 class FilamentCanvas;
 class FilamentCamera;
 
@@ -27,7 +29,8 @@ public:
 		return m_canvas;
 	}
 
-	void render(filament::Renderer *renderer, filament::RenderTarget *renderTarget, const filament::Viewport &viewport, bool standalone, bool yFlip);
+	void render(filament::Renderer *renderer, filament::RenderTarget *renderTarget, const filament::Viewport &viewport, bool standalone, bool yFlip,
+				const Size2i &windowSize);
 
 private:
 	std::shared_ptr<FilamentCanvas> m_canvas;

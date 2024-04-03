@@ -5,6 +5,10 @@
 #include "filament/filament_controlled_object_reference.h"
 #include "filament/filament_material_property_bundle.h"
 
+#include "core/math/rect2i.h"
+
+#include <optional>
+
 namespace filament {
 	class MaterialInstance;
 }
@@ -27,6 +31,12 @@ public:
 	Variant getParam(const StringName &name) override;
 	void setParam(const StringName &name, const Variant &value) override;
 
+	inline const std::optional<Rect2i> &scissor() const {
+		return m_scissor;
+	}
+
+	void setScissor(const std::optional<Rect2i> &scissor);
+
 protected:
 	void doClean() override;
 	void controlledObjectAboutToInvalidate(FilamentControlledObjectReferenceBase *linkedViaReference) override;
@@ -38,6 +48,7 @@ private:
 	FilamentControlledObjectReference<FilamentMaterialInstanceSource> m_fallbackParent;
 	bool m_createdFromFallback;
 	FilamentMaterialPropertyBundle m_properties;
+	std::optional<Rect2i> m_scissor;
 	FilamentEngineObject<filament::MaterialInstance> m_material;
 };
 

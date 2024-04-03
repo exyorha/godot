@@ -7,6 +7,7 @@
 
 class FilamentCanvasItem;
 class FilamentCanvasRenderOrderCollector;
+struct Rect2i;
 
 class FilamentCanvasItemContainer {
 protected:
@@ -29,6 +30,10 @@ public:
 
 	virtual bool isEffectivelyVisible() const = 0;
 
+	virtual std::optional<Rect2i> calculateClipRectangle(const std::optional<Rect2i> &childRectangle) const = 0;
+
+	void updateClipping();
+
 protected:
 	inline const std::vector<std::weak_ptr<FilamentCanvasItem>> &children() const {
 		return m_children;
@@ -36,6 +41,8 @@ protected:
 
 	virtual int32_t calculateZOrder(int32_t parentZOrder) const;
 	virtual std::optional<size_t> collectSelf(FilamentCanvasRenderOrderCollector &collector, int32_t calculatedZOrder);
+
+	virtual void updateSelfClipping();
 
 private:
 	std::vector<std::weak_ptr<FilamentCanvasItem>> m_children;

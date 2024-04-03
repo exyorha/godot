@@ -355,6 +355,13 @@ void FilamentRenderingServerBackend::shader_set_code(RID p_shader, const String 
 	printf("FilamentRenderingServerBackend::%s stub!\n", "shader_set_code");
 };
 
+void FilamentRenderingServerBackend::shader_set_package(RID p_shader, const Vector<uint8_t> & p_package)  {
+	auto shader = m_objectManager.resolve<FilamentShaderObject>(p_shader);
+	if(shader) {
+		shader->createFromPackage(p_package);
+	}
+}
+
 void FilamentRenderingServerBackend::shader_set_path_hint(RID p_shader, const String & p_path)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "shader_set_path_hint");
 };
@@ -364,8 +371,12 @@ String FilamentRenderingServerBackend::shader_get_code(RID p_shader) const {
 	return String();
 };
 
-void FilamentRenderingServerBackend::get_shader_parameter_list(RID p_shader, List<PropertyInfo> * p_param_list) const {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "get_shader_parameter_list");
+bool FilamentRenderingServerBackend::get_shader_parameter_list(RID p_shader, List<PropertyInfo> * p_param_list) const {
+	auto shader = m_objectManager.resolve<FilamentShaderObject>(p_shader);
+	if(shader) {
+		shader->getShaderParameterList(*p_param_list);
+	}
+	return false;
 };
 
 Variant FilamentRenderingServerBackend::shader_get_parameter_default(RID p_shader, const StringName & p_param) const {
@@ -1930,16 +1941,27 @@ void FilamentRenderingServerBackend::canvas_item_set_transform(RID p_item, const
 };
 
 void FilamentRenderingServerBackend::canvas_item_set_clip(RID p_item, bool p_clip)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "canvas_item_set_clip");
-};
+	auto item = m_objectManager.resolve<FilamentCanvasItem>(p_item);
+	if(item) {
+		item->setClip(p_clip);
+	}
+}
 
 void FilamentRenderingServerBackend::canvas_item_set_distance_field_mode(RID p_item, bool p_enable)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "canvas_item_set_distance_field_mode");
 };
 
 void FilamentRenderingServerBackend::canvas_item_set_custom_rect(RID p_item, bool p_custom_rect, const Rect2 & p_rect)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "canvas_item_set_custom_rect");
-};
+	auto item = m_objectManager.resolve<FilamentCanvasItem>(p_item);
+	if(item) {
+		std::optional<Rect2i> customRect;
+		if(p_custom_rect) {
+			customRect.emplace(p_rect);
+		}
+
+		item->setCustomRectangle(customRect);
+	}
+}
 
 void FilamentRenderingServerBackend::canvas_item_set_modulate(RID p_item, const Color & p_color)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "canvas_item_set_modulate");

@@ -198,8 +198,21 @@ void FilamentViewportObject::render(filament::Renderer *renderer, bool standalon
 		/*
 		* TODO: canvas sorting.
 		*/
+
+		Size2i windowSize;
+		if(m_registeredWithWindow) {
+			/*
+			 * TODO: this is VERY incorrect; should use actual window size, not viewport size
+			 */
+
+			windowSize = Size2i(viewport.width, viewport.height);
+
+		} else {
+			windowSize = m_size;
+		}
+
 		for(const auto &viewPtr: m_attachedCanvases) {
-			viewPtr->render(renderer, renderTarget, viewport, standalone, yFlip);
+			viewPtr->render(renderer, renderTarget, viewport, standalone, yFlip, windowSize);
 		}
 	}
 }
