@@ -29,31 +29,49 @@ void FilamentMesh::addSurface(const RenderingServer::SurfaceData &data) {
 void FilamentMesh::constructInstance(const utils::Entity &entity, filament::SkinningBuffer *skinWith) {
 	auto builder = buildSingleInstanceOfMesh(skinWith);
 
-	auto result = builder.build(*FilamentRenderingServerBackend::filamentEngine(), entity);
-	if(result != decltype(result)::Success) {
-		throw std::runtime_error("FilamentMesh::constructInstance: failed to construct the instance");
+	if(builder) {
+
+		auto result = builder->build(*FilamentRenderingServerBackend::filamentEngine(), entity);
+		if(result != decltype(result)::Success) {
+			throw std::runtime_error("FilamentMesh::constructInstance: failed to construct the instance");
+		}
 	}
 }
 
 
-filament::RenderableManager::Builder FilamentMesh::buildSingleInstanceOfMesh(filament::SkinningBuffer *skinWith) const {
-	filament::RenderableManager::Builder builder(m_surfaces.size());
+std::unique_ptr<filament::RenderableManager::Builder> FilamentMesh::buildSingleInstanceOfMesh(filament::SkinningBuffer *skinWith) const {
+	size_t nonEmptySurfaces = 0;
+	for(const auto &surface: m_surfaces) {
+		if(!surface.isEmpty()) {
+			nonEmptySurfaces++;
+		}
+	}
+
+	if(nonEmptySurfaces == 0) {
+		return nullptr;
+	}
+
+	auto builder = std::make_unique<filament::RenderableManager::Builder>(m_surfaces.size());
 
 	filament::Box compositeBoundingBox;
 
-	for(size_t index = 0, count = m_surfaces.size(); index < count; index++) {
-		const auto &surface = m_surfaces[index];
+	size_t surfaceIndex = 0;
+	for(const auto &surface: m_surfaces) {
+		if(!surface.isEmpty()) {
 
-		surface.build(builder, index);
+			surface.build(*builder, surfaceIndex);
 
-		compositeBoundingBox.unionSelf(surface.boundingBox());
+			surfaceIndex++;
+
+			compositeBoundingBox.unionSelf(surface.boundingBox());
+		}
 	}
 
-	builder.boundingBox(compositeBoundingBox);
+	builder->boundingBox(compositeBoundingBox);
 
 	if(skinWith) {
-		builder.enableSkinningBuffers();
-		builder.skinning(skinWith, skinWith->getBoneCount(), 0);
+		builder->enableSkinningBuffers();
+		builder->skinning(skinWith, skinWith->getBoneCount(), 0);
 	}
 
 	return builder;

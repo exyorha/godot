@@ -47,18 +47,21 @@ void FilamentMaterialPropertyBundle::apply(filament::MaterialInstance *materialI
 				if(textureObject) {
 					texture = textureObject->texture();
 				}
-				/*
-				 * TODO: some sort of Sampler management.
-				 */
-				filament::TextureSampler sampler(
-					filament::TextureSampler::MinFilter::LINEAR_MIPMAP_LINEAR,
-					filament::TextureSampler::MagFilter::LINEAR,
-					filament::TextureSampler::WrapMode::REPEAT,
-					filament::TextureSampler::WrapMode::REPEAT,
-					filament::TextureSampler::WrapMode::REPEAT);
-				sampler.setAnisotropy(4.0f);
 
-				materialInstance->setParameter(key.ptr(), key.length(), texture, sampler);
+				if(texture) {
+					/*
+					* TODO: some sort of Sampler management.
+					*/
+					filament::TextureSampler sampler(
+						filament::TextureSampler::MinFilter::LINEAR_MIPMAP_LINEAR,
+						filament::TextureSampler::MagFilter::LINEAR,
+						filament::TextureSampler::WrapMode::REPEAT,
+						filament::TextureSampler::WrapMode::REPEAT,
+						filament::TextureSampler::WrapMode::REPEAT);
+					sampler.setAnisotropy(4.0f);
+
+					materialInstance->setParameter(key.ptr(), key.length(), texture, sampler);
+				}
 				break;
 			}
 

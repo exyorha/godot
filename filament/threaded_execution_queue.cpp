@@ -32,6 +32,10 @@ void BaseThreadedExecutionQueue::flush() {
 	m_jobCondvar.notify_one();
 }
 
+void BaseThreadedExecutionQueueBackend::postMethodCall() {
+
+}
+
 void BaseThreadedExecutionQueue::queueThread(BackendFactoryFunction factory) {
 	BackendRegistration registration(this, factory());
 
@@ -42,6 +46,8 @@ void BaseThreadedExecutionQueue::queueThread(BackendFactoryFunction factory) {
 			if(m_queue.try_pop(callable)) {
 				iterations = 0;
 				callable();
+
+				m_backend->postMethodCall();
 			} else {
 				_mm_pause();
 				iterations++;
@@ -55,8 +61,6 @@ void BaseThreadedExecutionQueue::queueThread(BackendFactoryFunction factory) {
 				m_jobWakeupTokens -= 1;
 			}
 		}
-
-		//m_backend->runStepOnThread();
 	}
 }
 

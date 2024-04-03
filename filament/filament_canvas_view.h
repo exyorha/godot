@@ -12,6 +12,7 @@ namespace filament {
 	class View;
 	class Renderer;
 	class Viewport;
+	class RenderTarget;
 }
 
 class FilamentCanvasView {
@@ -26,7 +27,7 @@ public:
 		return m_canvas;
 	}
 
-	void render(filament::Renderer *renderer, const filament::Viewport &viewport);
+	void render(filament::Renderer *renderer, filament::RenderTarget *renderTarget, const filament::Viewport &viewport, bool standalone, bool yFlip);
 
 private:
 	std::shared_ptr<FilamentCanvas> m_canvas;

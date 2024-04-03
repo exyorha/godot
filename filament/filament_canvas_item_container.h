@@ -21,6 +21,10 @@ public:
 	void addChild(const std::shared_ptr<FilamentCanvasItem> &item);
 	void removeChild(const std::shared_ptr<FilamentCanvasItem> &item);
 
+	inline void childrenNeedSorting() {
+		m_childrenNeedSorting = true;
+	}
+
 	std::optional<size_t> collectItems(FilamentCanvasRenderOrderCollector &collector, int32_t parentZOrder);
 
 	virtual bool isEffectivelyVisible() const = 0;
@@ -35,6 +39,7 @@ protected:
 
 private:
 	std::vector<std::weak_ptr<FilamentCanvasItem>> m_children;
+	bool m_childrenNeedSorting;
 };
 
 #endif

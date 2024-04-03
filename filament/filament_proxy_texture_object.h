@@ -2,6 +2,7 @@
 #define FILAMENT_FILAMENT_PROXY_TEXTURE_OBJECT_H
 
 #include "filament/filament_texture_reference_object.h"
+#include "filament/filament_controlled_object_reference.h"
 
 class FilamentTextureObject;
 
@@ -10,13 +11,19 @@ public:
 	FilamentProxyTextureObject();
 	~FilamentProxyTextureObject() override;
 
-	filament::Texture *texture() const override;
+	filament::Texture *texture() override;
 
-	std::shared_ptr<FilamentTextureObject> target() const;
-	void setTarget(const std::shared_ptr<FilamentTextureObject> &target);
+	inline std::shared_ptr<FilamentTextureReferenceObject> target() const {
+		return m_target;
+	}
+
+	void setTarget(const std::shared_ptr<FilamentTextureReferenceObject> &target);
+
+protected:
+	void controlledObjectAboutToInvalidate(FilamentControlledObjectReferenceBase *linkedViaReference) override;
 
 private:
-	std::weak_ptr<FilamentTextureObject> m_target;
+	FilamentControlledObjectReference<FilamentTextureReferenceObject> m_target;
 };
 
 #endif

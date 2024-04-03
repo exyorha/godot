@@ -25,9 +25,6 @@ void FilamentCanvasElementTextureRect::build(filament::RenderableManager::Builde
 		buildGeometry();
 	}
 
-	printf("FilamentCanvasElementTextureRect: build: %d vertices, vertex buffer %p, index buffer %p\n",
-		   m_vertices.size(), m_vertexBuffer.get(), m_indexBuffer.get());
-
 	if(m_vertices.is_empty()) {
 		return;
 	}

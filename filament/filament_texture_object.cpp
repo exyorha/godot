@@ -35,7 +35,7 @@ FilamentTextureObject::FilamentTextureObject(
 
 FilamentTextureObject::~FilamentTextureObject() = default;
 
-filament::Texture *FilamentTextureObject::texture() const {
+filament::Texture *FilamentTextureObject::texture() {
 	return m_texture.get();
 }
 

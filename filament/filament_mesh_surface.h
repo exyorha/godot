@@ -21,6 +21,10 @@ public:
 	FilamentMeshSurface(FilamentMeshSurface &&other) noexcept;
 	FilamentMeshSurface &operator =(FilamentMeshSurface &&other) noexcept;
 
+	inline bool isEmpty() const {
+		return !m_vertexBuffer || !m_indexBuffer;
+	}
+
 	void build(filament::RenderableManager::Builder &builder, size_t primitiveIndexInBuilder) const;
 
 	void setMaterial(const std::shared_ptr<FilamentMaterialObject> &material);

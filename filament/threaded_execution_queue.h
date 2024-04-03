@@ -49,6 +49,8 @@ public:
 
 	BaseThreadedExecutionQueueBackend(const BaseThreadedExecutionQueueBackend &other) = delete;
 	BaseThreadedExecutionQueueBackend &operator =(const BaseThreadedExecutionQueueBackend &other) = delete;
+
+	virtual void postMethodCall();
 };
 
 class BaseThreadedExecutionQueue {

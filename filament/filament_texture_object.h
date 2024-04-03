@@ -25,7 +25,7 @@ public:
 	);
 	~FilamentTextureObject() override;
 
-	filament::Texture *texture() const override;
+	filament::Texture *texture() override;
 
 	static uint32_t calculateNumberOfMipMaps(uint32_t width, uint32_t height, uint32_t depth);
 

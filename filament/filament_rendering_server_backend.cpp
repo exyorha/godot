@@ -25,13 +25,26 @@
 #include <stdexcept>
 
 #include <filament/Engine.h>
+#include <filament/Renderer.h>
 
 filament::Engine *FilamentRenderingServerBackend::m_filamentEngine = nullptr;
 
-FilamentRenderingServerBackend::FilamentRenderingServerBackend() : m_engine(filament::Engine::create(), &m_filamentEngine) {
+FilamentRenderingServerBackend::FilamentRenderingServerBackend() : m_engine(filament::Engine::create(), &m_filamentEngine),
+	m_methodCallsProcessedWithoutFlushes(0) {
+
 	if(!m_engine) {
 		throw std::runtime_error("failed to create the filament Engine");
 	}
+
+	m_offscreenRenderer = FilamentEngineObject<filament::Renderer>(m_engine.get()->createRenderer());
+	if(!m_offscreenRenderer) {
+		throw std::runtime_error("failed to create the offscreen renderer");
+	}
+
+	m_offscreenRenderer->setDisplayInfo(filament::Renderer::DisplayInfo{
+		.refreshRate = 0.0f
+	});
+
 }
 
 FilamentRenderingServerBackend::~FilamentRenderingServerBackend() = default;
@@ -227,7 +240,7 @@ void FilamentRenderingServerBackend::texture_proxy_create(RID output, RID p_base
 	auto proxy = std::make_shared<FilamentProxyTextureObject>();
 	m_objectManager.associate(output, proxy);
 
-	proxy->setTarget(m_objectManager.resolve<FilamentTextureObject>(p_base));
+	proxy->setTarget(m_objectManager.resolve<FilamentTextureReferenceObject>(p_base));
 };
 
 void FilamentRenderingServerBackend::texture_2d_update(RID p_texture, const Ref<Image> & p_image, int p_layer)  {
@@ -247,7 +260,7 @@ void FilamentRenderingServerBackend::texture_3d_update(RID p_texture, const Vect
 void FilamentRenderingServerBackend::texture_proxy_update(RID p_texture, RID p_proxy_to)  {
 	auto proxy = m_objectManager.resolve<FilamentProxyTextureObject>(p_texture);
 	if(proxy) {
-		proxy->setTarget(m_objectManager.resolve<FilamentTextureObject>(p_proxy_to));
+		proxy->setTarget(m_objectManager.resolve<FilamentTextureReferenceObject>(p_proxy_to));
 	}
 };
 
@@ -1261,11 +1274,17 @@ void FilamentRenderingServerBackend::viewport_set_use_xr(RID p_viewport, bool p_
 };
 
 void FilamentRenderingServerBackend::viewport_set_size(RID p_viewport, int p_width, int p_height)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "viewport_set_size");
-};
+	auto viewport = m_objectManager.resolve<FilamentViewportObject>(p_viewport);
+	if(viewport) {
+		viewport->setSize(p_width, p_height);
+	}
+}
 
 void FilamentRenderingServerBackend::viewport_set_active(RID p_viewport, bool p_active)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "viewport_set_active");
+	auto viewport = m_objectManager.resolve<FilamentViewportObject>(p_viewport);
+	if(viewport) {
+		viewport->setActive(p_active);
+	}
 };
 
 void FilamentRenderingServerBackend::viewport_set_parent_viewport(RID p_viewport, RID p_parent_viewport)  {
@@ -1320,14 +1339,16 @@ void FilamentRenderingServerBackend::viewport_set_clear_mode(RID p_viewport, Ren
 	printf("FilamentRenderingServerBackend::%s stub!\n", "viewport_set_clear_mode");
 };
 
+/*
+ * We don't maintain separate render target and texture objects for viewports,
+ * instead, the viewport itself is a texture reference object.
+ */
 RID FilamentRenderingServerBackend::viewport_get_render_target(RID p_viewport) const {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "viewport_get_render_target");
-	return RID();
+	return p_viewport;
 };
 
 RID FilamentRenderingServerBackend::viewport_get_texture(RID p_viewport) const {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "viewport_get_texture");
-	return RID();
+	return p_viewport;
 };
 
 void FilamentRenderingServerBackend::viewport_set_environment_mode(RID p_viewport, RenderingServer::ViewportEnvironmentMode p_mode)  {
@@ -1335,11 +1356,17 @@ void FilamentRenderingServerBackend::viewport_set_environment_mode(RID p_viewpor
 };
 
 void FilamentRenderingServerBackend::viewport_set_disable_3d(RID p_viewport, bool p_disable)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "viewport_set_disable_3d");
+	auto viewport = m_objectManager.resolve<FilamentViewportObject>(p_viewport);
+	if(viewport) {
+		viewport->setDisable3D(p_disable);
+	}
 };
 
 void FilamentRenderingServerBackend::viewport_set_disable_2d(RID p_viewport, bool p_disable)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "viewport_set_disable_2d");
+	auto viewport = m_objectManager.resolve<FilamentViewportObject>(p_viewport);
+	if(viewport) {
+		viewport->setDisable2D(p_disable);
+	}
 };
 
 void FilamentRenderingServerBackend::viewport_attach_camera(RID p_viewport, RID p_camera)  {
@@ -2055,8 +2082,12 @@ void FilamentRenderingServerBackend::canvas_item_clear(RID p_item)  {
 }
 
 void FilamentRenderingServerBackend::canvas_item_set_draw_index(RID p_item, int p_index)  {
-	printf("FilamentRenderingServerBackend::%s stub!\n", "canvas_item_set_draw_index");
-};
+	auto item = m_objectManager.resolve<FilamentCanvasItem>(p_item);
+
+	if(item) {
+		item->setDrawIndex(p_index);
+	}
+}
 
 void FilamentRenderingServerBackend::canvas_item_set_material(RID p_item, RID p_material)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "canvas_item_set_material");
@@ -2261,17 +2292,30 @@ void FilamentRenderingServerBackend::request_frame_drawn_callback(const Callable
 void FilamentRenderingServerBackend::draw(bool p_swap_buffers, double frame_step)  {
 	m_dirtyList.clean();
 
+	filamentEngine()->flush();
+
+	m_methodCallsProcessedWithoutFlushes = 0;
+
+	for(auto item = m_topLevelViewports.next(); item != &m_topLevelViewports; item = item->next()) {
+		static_cast<FilamentViewportObject *>(static_cast<FilamentViewportListItem *>(item))->renderViewport();
+	}
+
 	for(const auto &windowPtr: m_windows) {
 		auto window = windowPtr.get();
 		if(window) {
 			window->renderWindow();
 		}
 	}
+
+	filamentEngine()->pumpMessageQueues();
 };
 
 bool FilamentRenderingServerBackend::sync()  {
 	m_dirtyList.clean();
 	filamentEngine()->flush();
+
+	m_methodCallsProcessedWithoutFlushes = 0;
+
 
 	/*
 	 * This is a dummy function with a non-null return, and the call of it is
@@ -2413,6 +2457,8 @@ Error FilamentRenderingServerBackend::display_server_initialize() {
 }
 
 Error FilamentRenderingServerBackend::window_create(DisplayServer::WindowID p_window_id, void *p_native_window) {
+	printf("window_create: %u, over %p\n", p_window_id, p_native_window);
+
 	auto neededSize = static_cast<size_t>(p_window_id) + 1;
 	if(m_windows.size() < neededSize) {
 		m_windows.resize(neededSize);
@@ -2424,13 +2470,28 @@ Error FilamentRenderingServerBackend::window_create(DisplayServer::WindowID p_wi
 }
 
 void FilamentRenderingServerBackend::window_destroy(DisplayServer::WindowID p_window_id) {
+	printf("window_destroy: %u\n", p_window_id);
+
 	if(m_windows.size() <= p_window_id) {
 		return;
 	}
 
 	m_windows[p_window_id].reset();
+
+	filamentEngine()->flushAndWait();
+
+	printf("window_destroy finished\n");
 }
 
 FilamentRenderingServerBackend *FilamentRenderingServerBackend::get() {
 	return FilamentRenderingServer::filament_server_instance()->backend();
+}
+
+void FilamentRenderingServerBackend::postMethodCall() {
+	if(++m_methodCallsProcessedWithoutFlushes == 256) {
+
+		filamentEngine()->flush();
+
+		m_methodCallsProcessedWithoutFlushes = 0;
+	}
 }

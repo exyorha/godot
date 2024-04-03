@@ -4,12 +4,15 @@
 
 #include <algorithm>
 
-FilamentCanvasItemContainer::FilamentCanvasItemContainer() = default;
+FilamentCanvasItemContainer::FilamentCanvasItemContainer() : m_childrenNeedSorting(false) {
+
+}
 
 FilamentCanvasItemContainer::~FilamentCanvasItemContainer() = default;
 
 void FilamentCanvasItemContainer::addChild(const std::shared_ptr<FilamentCanvasItem> &item) {
 	m_children.emplace_back(item);
+	childrenNeedSorting();
 }
 
 void FilamentCanvasItemContainer::removeChild(const std::shared_ptr<FilamentCanvasItem> &item) {
@@ -23,6 +26,30 @@ void FilamentCanvasItemContainer::removeChild(const std::shared_ptr<FilamentCanv
 }
 
 std::optional<size_t> FilamentCanvasItemContainer::collectItems(FilamentCanvasRenderOrderCollector &collector, int32_t parentZOrder) {
+	if(m_childrenNeedSorting) {
+		std::stable_sort(m_children.begin(), m_children.end(),
+						 [](const std::weak_ptr<FilamentCanvasItem> &wa, const std::weak_ptr<FilamentCanvasItem> &wb) {
+
+			auto pa = wa.lock();
+			auto pb = wb.lock();
+
+			int32_t a = 0;
+			int32_t b = 0;
+
+			if(pa) {
+				a = pa->drawIndex();
+			}
+
+			if(pb) {
+				b = pb->drawIndex();
+			}
+
+			return a < b;
+		});
+
+		m_childrenNeedSorting = false;
+	}
+
 	auto thisItemZOrder = calculateZOrder(parentZOrder);
 
 	std::vector<size_t> earlyChildren;

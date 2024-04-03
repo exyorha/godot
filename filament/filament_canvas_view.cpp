@@ -25,11 +25,34 @@ FilamentCanvasView::FilamentCanvasView(const std::shared_ptr<FilamentCanvas> &ca
 
 FilamentCanvasView::~FilamentCanvasView() = default;
 
-void FilamentCanvasView::render(filament::Renderer *renderer, const filament::Viewport &viewport) {
+void FilamentCanvasView::render(filament::Renderer *renderer, filament::RenderTarget *renderTarget, const filament::Viewport &viewport,
+								bool standalone, bool yFlip) {
+	double bottom = viewport.height;
+	double top = 0;
+
+	if(yFlip) {
+		/*
+		 * When rendering into a render target, we want to flip the output
+		 * image, so it'll match the sampling orientation.
+		 */
+		std::swap(bottom, top);
+	}
+
 	m_camera->camera()->setProjection(filament::Camera::Projection::ORTHO,
-									  viewport.left, viewport.right(), viewport.height, 0,
+									  viewport.left, viewport.right(), bottom, top,
 									  -1.0, 1.0);
 
 	m_view->setViewport(viewport);
-	renderer->render(m_view.get());
+	m_view->setRenderTarget(renderTarget);
+
+	if(standalone) {
+		renderer->renderStandaloneView(m_view.get());
+
+		renderer->setClearOptions(filament::Renderer::ClearOptions{
+			.clear = false,
+			.discard = false
+		});
+	} else {
+		renderer->render(m_view.get());
+	}
 }

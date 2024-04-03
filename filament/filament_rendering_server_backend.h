@@ -5,12 +5,14 @@
 #include "threaded_execution_queue.h"
 #include "filament_object_manager.h"
 #include "filament_dirty_list.h"
+#include "filament_viewport_object.h"
 
 #include <vector>
 #include <memory>
 
 namespace filament {
 	class Engine;
+	class Renderer;
 }
 
 class FilamentWindow;
@@ -544,6 +546,17 @@ public:
 		return m_defaultWhiteTextureRID;
 	}
 
+	inline void addTopLevelViewport(FilamentViewportListItem *item) noexcept {
+		m_topLevelViewports.insertTail(item);
+	}
+
+	inline filament::Renderer *offscreenRenderer() const {
+		return m_offscreenRenderer.get();
+	}
+
+	void postMethodCall() override;
+
+
 private:
 
 	void upload3DTexture(const std::shared_ptr<FilamentTextureObject> &texture, const Vector<Ref<Image>> & p_data);
@@ -577,6 +590,10 @@ private:
 	std::shared_ptr<FilamentMaterialObject> m_default3DMaterial;
 	std::shared_ptr<FilamentShaderObject> m_defaultCanvasItemShader;
 	RID m_defaultWhiteTextureRID;
+	unsigned int m_methodCallsProcessedWithoutFlushes;
+	FilamentLinkedListEntry m_topLevelViewports;
+	FilamentEngineObject<filament::Renderer> m_offscreenRenderer;
+
 	static filament::Engine *m_filamentEngine;
 };
 

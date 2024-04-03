@@ -26,16 +26,16 @@ void FilamentCamera::setFrustum(double size, const Vector2 &offset, double near,
 	m_projection.emplace<FrustumProjection>(FrustumProjection{ size, offset, near, far });
 }
 
-void FilamentCamera::configureForViewport(const filament::Viewport &viewport) {
-	std::visit([this, &viewport](const auto &value) { configureForViewport(viewport, value); }, m_projection);
+void FilamentCamera::configureForViewport(const filament::Viewport &viewport, bool yFlip) {
+	std::visit([this, &viewport, yFlip](const auto &value) { configureForViewport(viewport, value, yFlip); }, m_projection);
 }
 
-void FilamentCamera::configureForViewport(const filament::Viewport &viewport, const std::monostate &config) {
+void FilamentCamera::configureForViewport(const filament::Viewport &viewport, const std::monostate &config, bool yFlip) {
 	(void)viewport;
 	(void)config;
 }
 
-void FilamentCamera::configureForViewport(const filament::Viewport &viewport, const PerspectiveProjection &config) {
+void FilamentCamera::configureForViewport(const filament::Viewport &viewport, const PerspectiveProjection &config, bool yFlip) {
 	filament::Camera::Fov direction;
 
 	/*
@@ -56,10 +56,20 @@ void FilamentCamera::configureForViewport(const filament::Viewport &viewport, co
 		direction = filament::Camera::Fov::VERTICAL;
 	}
 
-	m_camera->setProjection(config.fov, viewport.width * 1.0 / viewport.height, config.near, config.far, direction);
+	double aspect = viewport.width * 1.0 / viewport.height;
+
+	if(yFlip) {
+		auto matrix = filament::Camera::projection(direction, config.fov, aspect, config.near, config.far);
+
+		matrix[1][1] = -matrix[1][1];
+
+		m_camera->setCustomProjection(matrix, config.near, config.far);
+	} else {
+		m_camera->setProjection(config.fov, aspect, config.near, config.far, direction);
+	}
 }
 
-void FilamentCamera::configureForViewport(const filament::Viewport &viewport, const OrthogonalProjection &config) {
+void FilamentCamera::configureForViewport(const filament::Viewport &viewport, const OrthogonalProjection &config, bool yFlip) {
 	double left;
 	double right;
 	double top;
@@ -89,11 +99,14 @@ void FilamentCamera::configureForViewport(const filament::Viewport &viewport, co
 		right = sizeX * 0.5;
 	}
 
+	if(yFlip) {
+		std::swap(bottom, top);
+	}
 
 	m_camera->setProjection(filament::Camera::Projection::ORTHO, left, right, bottom, top, config.near, config.far);
 }
 
-void FilamentCamera::configureForViewport(const filament::Viewport &viewport, const FrustumProjection &config) {
+void FilamentCamera::configureForViewport(const filament::Viewport &viewport, const FrustumProjection &config, bool yFlip) {
 	double left;
 	double right;
 	double top;
@@ -122,6 +135,10 @@ void FilamentCamera::configureForViewport(const filament::Viewport &viewport, co
 
 		left = -sizeX * 0.5 + config.offset.x;
 		right = sizeX * 0.5 + config.offset.x;
+	}
+
+	if(yFlip) {
+		std::swap(bottom, top);
 	}
 
 	m_camera->setProjection(filament::Camera::Projection::ORTHO, left, right, bottom, top, config.near, config.far);

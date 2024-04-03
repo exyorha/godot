@@ -115,6 +115,17 @@ static String get_atom_name(Display *p_disp, Atom p_atom) {
 bool DisplayServerX11::has_feature(Feature p_feature) const {
 	switch (p_feature) {
 		case FEATURE_SUBWINDOWS:
+#ifdef FILAMENT_ENABLED
+			/*
+			 * Using subwindows on Filament currently causes issues with
+			 * swapchain destruction. Until this is properly resolved, report
+			 * no subwindow support.
+			 */
+			return !filament_server;
+#else
+			return true;
+#endif
+
 #ifdef TOUCH_ENABLED
 		case FEATURE_TOUCHSCREEN:
 #endif

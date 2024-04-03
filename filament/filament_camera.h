@@ -34,7 +34,7 @@ public:
 		m_verticalAspect = enable;
 	}
 
-	void configureForViewport(const filament::Viewport &viewport);
+	void configureForViewport(const filament::Viewport &viewport, bool yFlip);
 
 private:
 	struct PerspectiveProjection {
@@ -58,10 +58,10 @@ private:
 
 	using ConfiguredProjection = std::variant<std::monostate, PerspectiveProjection, OrthogonalProjection, FrustumProjection>;
 
-	void configureForViewport(const filament::Viewport &viewport, const std::monostate &config);
-	void configureForViewport(const filament::Viewport &viewport, const PerspectiveProjection &config);
-	void configureForViewport(const filament::Viewport &viewport, const OrthogonalProjection &config);
-	void configureForViewport(const filament::Viewport &viewport, const FrustumProjection &config);
+	void configureForViewport(const filament::Viewport &viewport, const std::monostate &config, bool yFlip);
+	void configureForViewport(const filament::Viewport &viewport, const PerspectiveProjection &config, bool yFlip);
+	void configureForViewport(const filament::Viewport &viewport, const OrthogonalProjection &config, bool yFlip);
+	void configureForViewport(const filament::Viewport &viewport, const FrustumProjection &config, bool yFlip);
 
 	filament::Camera *m_camera;
 	ConfiguredProjection m_projection;

@@ -82,6 +82,12 @@ public:
 		const Vector<int> & p_bones,
 		const Vector<float> & p_weights);
 
+	inline int32_t drawIndex() const {
+		return m_drawIndex;
+	}
+
+	void setDrawIndex(int32_t drawIndex);
+
 protected:
 	int32_t calculateZOrder(int32_t parentZOrder) const override;
 	std::optional<size_t> collectSelf(FilamentCanvasRenderOrderCollector &collector, int32_t calculatedZOrder) override;
@@ -109,6 +115,7 @@ private:
 	bool m_zRelativeToParent;
 	bool m_drawBehindParent;
 	float m_blendOrder;
+	int32_t m_drawIndex;
 	Transform2D m_transform;
 };
 

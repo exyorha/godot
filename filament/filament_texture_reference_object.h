@@ -14,7 +14,7 @@ protected:
 public:
 	~FilamentTextureReferenceObject() override;
 
-	virtual filament::Texture *texture() const = 0;
+	virtual filament::Texture *texture() = 0;
 };
 
 #endif

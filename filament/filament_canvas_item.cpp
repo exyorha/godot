@@ -12,7 +12,7 @@
 #include <filament/Engine.h>
 
 FilamentCanvasItem::FilamentCanvasItem() : m_visible(true), m_zIndex(0), m_zRelativeToParent(true), m_drawBehindParent(false),
-	m_blendOrder(0) {
+	m_blendOrder(0), m_drawIndex(0) {
 
 }
 
@@ -145,6 +145,10 @@ void FilamentCanvasItem::addTriangleArray(
 	const Vector<Point2> & p_uvs,
 	const Vector<int> & p_bones,
 	const Vector<float> & p_weights) {
+
+	if(p_indices.is_empty() || p_points.is_empty()) {
+		return;
+	}
 
 	beforeGeometryChange();
 
@@ -286,4 +290,15 @@ void FilamentCanvasItem::setBlendOrder(float blendOrder) {
 
 std::optional<size_t> FilamentCanvasItem::collectSelf(FilamentCanvasRenderOrderCollector &collector, int32_t calculatedZOrder) {
 	return collector.collectItem(std::static_pointer_cast<FilamentCanvasItem>(shared_from_this()), calculatedZOrder);
+}
+
+void FilamentCanvasItem::setDrawIndex(int32_t drawIndex) {
+	if(!m_drawIndex) {
+		m_drawIndex = drawIndex;
+
+		auto parent = m_parent.lock();
+		if(parent) {
+			parent->childrenNeedSorting();
+		}
+	}
 }
