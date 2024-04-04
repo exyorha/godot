@@ -120,7 +120,53 @@ env_filament.Prepend(CPPPATH=[
     "#filament/%s/third_party/robin-map" % filament_srcdir
 ])
 
+if env.editor_build:
+    env_filament.Prepend(CPPPATH=[
+        "#filament/shader_compiler/GLshader/include",
+        "#filament/%s/libs/filamat/include" % filament_srcdir,
+    ])
+
+    sources.extend([
+        "shader_compiler/GLshader/src/definition.cpp",
+        "shader_compiler/GLshader/src/preprocessor/classify.cpp",
+        "shader_compiler/GLshader/src/preprocessor/control.cpp",
+        "shader_compiler/GLshader/src/preprocessor/eval.cpp",
+        "shader_compiler/GLshader/src/preprocessor/macro.cpp",
+        "shader_compiler/GLshader/src/preprocessor/preprocessor.cpp",
+        "shader_compiler/GLshader/src/preprocessor/skip.cpp",
+        "shader_compiler/filamat_extra_enums.cpp",
+        "shader_compiler/filament_material_parser.cpp",
+        "shader_compiler/resource_importer_filament_material.cpp"
+    ])
+
 lib = env_filament.add_library("filamentserver", sources)
+
+#env["LINKCOM"] = env["LINKCOM"].replace("$_LIBFLAGS", "-Wl,--start-group $_LIBFLAGS_FILAMENT $_LIBFLAGS")
+
+#env['_LIBFLAGS_FILAMENT']='${_stripixes(LIBLINKPREFIX, FILAMENT_GROUP_LIBS, LIBLINKSUFFIX, LIBPREFIXES, LIBSUFFIXES, __env__)}'
+
+filament_group = [ lib ]
+
+if env.editor_build:
+    filament_group.extend([
+        "filamat_combined",
+        "shaders"
+    ])
+
+filament_group.extend([
+    "filament",
+    "backend",
+    "vkshaders",
+    "utils",
+    "bluegl",
+    "bluevk",
+    "filaflat",
+    "filabridge",
+    "geometry",
+    "ibl",
+    "smol-v",
+    "c++"
+])
 
 env.Prepend(
     LIBPATH = [
@@ -133,23 +179,12 @@ env.Prepend(
         "#filament/%s/libs/filabridge" % filament_builddir,
         "#filament/%s/libs/ibl" % filament_builddir,
         "#filament/%s/libs/geometry" % filament_builddir,
-        "#filament/%s/third_party/smol-v/tnt" % filament_builddir
+        "#filament/%s/third_party/smol-v/tnt" % filament_builddir,
+        "#filament/%s/libs/filamat" % filament_builddir,
+        "#filament/%s/shaders" % filament_builddir
     ],
-    LIBS = [
-        lib,
-        "filament",
-        "backend",
-        "vkshaders",
-        "utils",
-        "bluegl",
-        "bluevk",
-        "filaflat",
-        "filabridge",
-        "geometry",
-        "ibl",
-        "smol-v",
-        "c++"
-    ]
+    FILAMENT_GROUP_LIBS = filament_group,
+    LIBS = filament_group
 )
 
 env.Append(

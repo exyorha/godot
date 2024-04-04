@@ -2,9 +2,16 @@
 #include "filament/filament_rendering_server.h"
 #include "filament/resources/filament_material.h"
 
+#if defined(TOOLS_ENABLED)
+#include "filament/shader_compiler/resource_importer_filament_material.h"
+#include <filamat/MaterialBuilder.h>
+#endif
+
 static Ref<ResourceFormatLoaderFilamentMaterial> resource_loader_filament_material;
 
 static Ref<ResourceFormatSaverFilamentMaterial> resource_saver_filament_material;
+
+static Ref<ResourceImporterFilamentMaterial> resource_importer_filament_material;
 
 void register_filament_types() {
 	/*
@@ -18,9 +25,25 @@ void register_filament_types() {
 	resource_saver_filament_material.instantiate();
 	ResourceSaver::add_resource_format_saver(resource_saver_filament_material, true);
 
+#if defined(TOOLS_ENABLED)
+	filamat::MaterialBuilder::init();
+
+	GDREGISTER_CLASS(ResourceImporterFilamentMaterial);
+
+	resource_importer_filament_material.instantiate();
+	ResourceFormatImporter::get_singleton()->add_importer(resource_importer_filament_material);
+#endif
 }
 
 void unregister_filament_types() {
+#if defined(TOOLS_ENABLED)
+
+	ResourceFormatImporter::get_singleton()->remove_importer(resource_importer_filament_material);
+	resource_importer_filament_material.unref();
+
+	filamat::MaterialBuilder::shutdown();
+#endif
+
 	ResourceSaver::remove_resource_format_saver(resource_saver_filament_material);
 	resource_saver_filament_material.unref();
 	ResourceLoader::remove_resource_format_loader(resource_loader_filament_material);

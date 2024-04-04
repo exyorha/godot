@@ -65,11 +65,13 @@ void FilamentMaterialPropertyBundle::apply(filament::MaterialInstance *materialI
 				break;
 			}
 
+			case Variant::BOOL:
+				materialInstance->setParameter(key.ptr(), key.length(), static_cast<bool>(value));
+				break;
+
 			case Variant::FLOAT:
-			{
 				materialInstance->setParameter(key.ptr(), key.length(), static_cast<float>(value));
 				break;
-			}
 
 			case Variant::VECTOR2:
 			{

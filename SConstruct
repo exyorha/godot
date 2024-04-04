@@ -470,6 +470,16 @@ if env_base["precision"] == "double":
 if env_base["filament"]:
     env_base.Append(CPPDEFINES=["FILAMENT_ENABLED"])
 
+    # Must be disabled: we'll depend on Filament's one in this case. This is
+    # needed to avoid symbol conflicts
+    env_base["module_glslang_enabled"] = False
+
+    if not env_base.msvc:
+        # We have to use libc++ with Filament.
+        env_base.Prepend(
+            CXXFLAGS = [ "-stdlib=libc++" ]
+        )
+
 if selected_platform in platform_list:
     tmppath = "./platform/" + selected_platform
     sys.path.insert(0, tmppath)

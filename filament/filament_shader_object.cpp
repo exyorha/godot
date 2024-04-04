@@ -101,14 +101,14 @@ void FilamentShaderObject::getShaderParameterList(List<PropertyInfo> &parameterL
 					continue;
 			}
 
-			if(parameter.count == 0) {
-				out.type = Variant::OBJECT;
-				out.hint = PROPERTY_HINT_RESOURCE_TYPE;
-				out.hint_string = textureClass;
-			} else {
+			if(parameter.count > 1) {
 				out.type = Variant::ARRAY;
 				out.hint = PROPERTY_HINT_ARRAY_TYPE;
 				out.hint_string = MAKE_RESOURCE_TYPE_HINT(textureClass);
+			} else {
+				out.type = Variant::OBJECT;
+				out.hint = PROPERTY_HINT_RESOURCE_TYPE;
+				out.hint_string = textureClass;
 			}
 		} else {
 			switch(parameter.type) {
