@@ -11,7 +11,7 @@ namespace glshader::process
 
     }
 
-    definition_info::definition_info(std::string &&value) : replacement(std::move(value))
+    definition_info::definition_info(const std::string value) : replacement(std::move(value))
     {}
 
     definition_info::definition_info(const std::vector<std::string> parameters, const std::string replacement) :

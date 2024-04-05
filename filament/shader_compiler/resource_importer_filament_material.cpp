@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  resource_importer_filament_material.cpp                               */
+/*  resource_importer_filament_material.cpp                                     */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -31,6 +31,7 @@
 #include "resource_importer_filament_material.h"
 
 #include "filament/shader_compiler/filament_material_parser.h"
+#include "filament/filament_rendering_server.h"
 
 #include <filament/Engine.h>
 #include <utils/JobSystem.h>

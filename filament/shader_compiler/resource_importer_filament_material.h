@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  resource_importer_filament_material.h                                 */
+/*  resource_importer_filament_material.h                                       */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */

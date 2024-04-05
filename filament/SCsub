@@ -105,8 +105,7 @@ sources = [
     "filament_window.cpp",
     "register_filament_types.cpp",
     "threaded_execution_queue.cpp",
-    "resources/filament_material.cpp",
-    "resources/filament_uber_material.cpp"
+    "resources/filament_material.cpp"
 ]
 
 env_filament = env.Clone()
@@ -118,14 +117,13 @@ env_filament.Prepend(CPPPATH=[
     "#filament/%s/libs/math/include" % filament_srcdir,
     "#filament/%s/libs/filabridge/include" % filament_srcdir,
     "#filament/%s/libs/geometry/include" % filament_srcdir,
-    "#filament/%s/libs/uberz/include" % filament_srcdir,
     "#filament/%s/third_party/robin-map" % filament_srcdir
 ])
 
 if env.editor_build:
     env_filament.Prepend(CPPPATH=[
         "#filament/shader_compiler/GLshader/include",
-        "#filament/%s/libs/filamat/include" % filament_srcdir
+        "#filament/%s/libs/filamat/include" % filament_srcdir,
     ])
 
     sources.extend([
@@ -138,13 +136,14 @@ if env.editor_build:
         "shader_compiler/GLshader/src/preprocessor/skip.cpp",
         "shader_compiler/filamat_extra_enums.cpp",
         "shader_compiler/filament_material_parser.cpp",
-        "shader_compiler/filament_uber_material_parser.cpp",
-        "shader_compiler/filament_ubershader_variant.cpp",
-        "shader_compiler/resource_importer_filament_material.cpp",
-        "shader_compiler/resource_importer_filament_uber_material.cpp"
+        "shader_compiler/resource_importer_filament_material.cpp"
     ])
 
 lib = env_filament.add_library("filamentserver", sources)
+
+#env["LINKCOM"] = env["LINKCOM"].replace("$_LIBFLAGS", "-Wl,--start-group $_LIBFLAGS_FILAMENT $_LIBFLAGS")
+
+#env['_LIBFLAGS_FILAMENT']='${_stripixes(LIBLINKPREFIX, FILAMENT_GROUP_LIBS, LIBLINKSUFFIX, LIBPREFIXES, LIBSUFFIXES, __env__)}'
 
 filament_group = [ lib ]
 
@@ -163,7 +162,6 @@ filament_group.extend([
     "bluevk",
     "filaflat",
     "filabridge",
-    "uberzlib",
     "geometry",
     "ibl",
     "smol-v",
@@ -183,9 +181,9 @@ env.Prepend(
         "#filament/%s/libs/geometry" % filament_builddir,
         "#filament/%s/third_party/smol-v/tnt" % filament_builddir,
         "#filament/%s/libs/filamat" % filament_builddir,
-        "#filament/%s/libs/uberz" % filament_builddir,
         "#filament/%s/shaders" % filament_builddir
     ],
+    FILAMENT_GROUP_LIBS = filament_group,
     LIBS = filament_group
 )
 

@@ -50,7 +50,6 @@ public:
 	RID shader_create()  override;
 	void shader_set_code(RID p_shader, const String & p_code)  override;
 	void shader_set_package(RID p_shader, const Vector<uint8_t> &p_package); // FILAMENT PRIVATE
-	String shader_get_name(RID p_shader) const; // FILAMENT PRIVATE
 	void shader_set_path_hint(RID p_shader, const String & p_path)  override;
 	String shader_get_code(RID p_shader) const override;
 	void get_shader_parameter_list(RID p_shader, List<PropertyInfo> * p_param_list) const override;

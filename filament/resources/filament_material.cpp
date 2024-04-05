@@ -17,8 +17,6 @@ void FilamentMaterial::set_package(const Vector<uint8_t> &p_package) {
 
 	server->shader_set_package(shader_rid(), p_package);
 
-	set_name(server->shader_get_name(shader_rid()));
-
 	emit_changed();
 }
 
@@ -38,6 +36,12 @@ Ref<Resource> ResourceFormatLoaderFilamentMaterial::load(const String &p_path, c
 	Error error = OK;
 	Vector<uint8_t> buffer = FileAccess::get_file_as_bytes(p_path, &error);
 	ERR_FAIL_COND_V_MSG(error, nullptr, "Cannot load shader: " + p_path);
+
+	String str;
+	if (buffer.size() > 0) {
+		error = str.parse_utf8((const char *)buffer.ptr(), buffer.size());
+		ERR_FAIL_COND_V_MSG(error, nullptr, "Cannot parse shader: " + p_path);
+	}
 
 	Ref<FilamentMaterial> shader;
 	shader.instantiate();

@@ -663,23 +663,4 @@ namespace glshader::process
 	void pragma_evaluation_context::syntax_error(const std::string &message) const {
 		file.syntax_error(current_file, current_line, message);
 	}
-
-	std::string pragma_evaluation_context::expand(const std::string &value) const {
-
-		std::string fully_expanded_value;
-
-		const char *unexpanded_ptr = value.data();
-		while(*unexpanded_ptr != 0) {
-			auto begin = unexpanded_ptr;
-
-			auto str = glshader::process::impl::macro::expand(unexpanded_ptr, unexpanded_ptr, current_file, current_line, file);
-			fully_expanded_value.append(str);
-
-			if(unexpanded_ptr == begin) {
-				break;
-			}
-		}
-
-		return fully_expanded_value;
-	}
 }
