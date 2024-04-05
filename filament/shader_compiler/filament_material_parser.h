@@ -9,13 +9,16 @@
 
 #include <optional>
 
+class FilamentUbershaderVariant;
+
 class FilamentMaterialParser final : private glshader::process::pragma_processor_interface {
 public:
 
-	static filamat::Package compileMaterialFile(const std::filesystem::path &filename, utils::JobSystem &jobs);
+	static filamat::Package compileMaterialFile(const std::filesystem::path &filename, utils::JobSystem &jobs,
+												const FilamentUbershaderVariant *ubershaderVariant = nullptr);
 
 private:
-	FilamentMaterialParser();
+	explicit FilamentMaterialParser(const FilamentUbershaderVariant *ubershaderVariant);
 	~FilamentMaterialParser();
 
 	bool process_pragma(glshader::process::pragma_evaluation_context &&context) override;
@@ -52,6 +55,7 @@ private:
 
 	void switchOutputStream(glshader::process::pragma_evaluation_context &context, OutputStream stream);
 
+	const FilamentUbershaderVariant *m_ubershaderVariant;
 	OutputStream m_outputStream;
 	filamat::MaterialBuilder m_builder;
 	std::optional<std::string> m_vertexStage;

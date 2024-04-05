@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  resource_importer_filament_material.cpp                               */
+/*  resource_importer_filament_uber_material.cpp                          */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,9 +28,9 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "resource_importer_filament_material.h"
+#include "resource_importer_filament_uber_material.h"
 
-#include "filament/shader_compiler/filament_material_parser.h"
+#include "filament/shader_compiler/filament_uber_material_parser.h"
 
 #include <filament/Engine.h>
 #include <utils/JobSystem.h>
@@ -42,46 +42,46 @@
 #include "core/io/file_access.h"
 #include "editor/editor_node.h"
 
-String ResourceImporterFilamentMaterial::get_importer_name() const {
-	return "filamat";
+String ResourceImporterFilamentUberMaterial::get_importer_name() const {
+	return "filaubermat";
 }
 
-String ResourceImporterFilamentMaterial::get_visible_name() const {
-	return "Filament Material";
+String ResourceImporterFilamentUberMaterial::get_visible_name() const {
+	return "Filament UberMaterial";
 }
 
-void ResourceImporterFilamentMaterial::get_recognized_extensions(List<String> *p_extensions) const {
-	p_extensions->push_back("mat");
+void ResourceImporterFilamentUberMaterial::get_recognized_extensions(List<String> *p_extensions) const {
+	p_extensions->push_back("ubermat");
 }
 
-String ResourceImporterFilamentMaterial::get_save_extension() const {
-	return "fmat";
+String ResourceImporterFilamentUberMaterial::get_save_extension() const {
+	return "fumat";
 }
 
-String ResourceImporterFilamentMaterial::get_resource_type() const {
-	return "FilamentMaterial";
+String ResourceImporterFilamentUberMaterial::get_resource_type() const {
+	return "FilamentUberMaterial";
 }
 
-int ResourceImporterFilamentMaterial::get_preset_count() const {
+int ResourceImporterFilamentUberMaterial::get_preset_count() const {
 	return 0;
 }
 
-String ResourceImporterFilamentMaterial::get_preset_name(int p_idx) const {
+String ResourceImporterFilamentUberMaterial::get_preset_name(int p_idx) const {
 	return String();
 }
 
-void ResourceImporterFilamentMaterial::get_import_options(const String &p_path, List<ImportOption> *r_options, int p_preset) const {
+void ResourceImporterFilamentUberMaterial::get_import_options(const String &p_path, List<ImportOption> *r_options, int p_preset) const {
 }
 
-bool ResourceImporterFilamentMaterial::get_option_visibility(const String &p_path, const String &p_option, const HashMap<StringName, Variant> &p_options) const {
+bool ResourceImporterFilamentUberMaterial::get_option_visibility(const String &p_path, const String &p_option, const HashMap<StringName, Variant> &p_options) const {
 	return true;
 }
 
 
-Error ResourceImporterFilamentMaterial::import(const String &p_source_file, const String &p_save_path, const HashMap<StringName, Variant> &p_options, List<String> *r_platform_variants, List<String> *r_gen_files, Variant *r_metadata) {
+Error ResourceImporterFilamentUberMaterial::import(const String &p_source_file, const String &p_save_path, const HashMap<StringName, Variant> &p_options, List<String> *r_platform_variants, List<String> *r_gen_files, Variant *r_metadata) {
 
 
-	filamat::Package package;
+	utils::FixedCapacityVector<uint8_t> package;
 
 	try {
 		auto sourceFileInFS = ProjectSettings::get_singleton()->globalize_path(p_source_file);
@@ -105,32 +105,32 @@ Error ResourceImporterFilamentMaterial::import(const String &p_source_file, cons
 			utils::JobSystem js;
 		} jobSystem;
 
-		package = FilamentMaterialParser::compileMaterialFile(path, jobSystem.js);
+		package = FilamentUberMaterialParser::compileUberMaterialFile(path, jobSystem.js);
 
 	} catch(const std::exception &e) {
 		callable_mp_static(&EditorNode::add_io_error)
-			.bind(vformat(TTR("An attempt to import a Filament material '%s' has failed with an exception: %s."), p_source_file, e.what())).call_deferred();
+			.bind(vformat(TTR("An attempt to import a Filament ubermaterial '%s' has failed with an exception: %s."), p_source_file, e.what())).call_deferred();
 
 		return ERR_COMPILATION_FAILED;
 	}
 
-	if(!package.isValid()) {
+	if(package.empty()) {
 		callable_mp_static(&EditorNode::add_io_error)
-			.bind(vformat(TTR("The Filament material '%s' has failed to compile, check the log."), p_source_file)).call_deferred();
+			.bind(vformat(TTR("The Filament ubermaterial '%s' has failed to compile, check the log."), p_source_file)).call_deferred();
 
 		return ERR_COMPILATION_FAILED;
 	}
 
 	Error err;
-	Ref<FileAccess> file = FileAccess::open(p_save_path + ".fmat", FileAccess::WRITE, &err);
+	Ref<FileAccess> file = FileAccess::open(p_save_path + ".fumat", FileAccess::WRITE, &err);
 	ERR_FAIL_COND_V(err != OK, ERR_CANT_OPEN);
 	ERR_FAIL_COND_V(!file.is_valid(), ERR_CANT_OPEN);
 
-	file->store_buffer(package.getData(), package.getSize());
+	file->store_buffer(package.data(), package.size());
 	file->close();
 
 	return OK;
 }
 
-ResourceImporterFilamentMaterial::ResourceImporterFilamentMaterial() {
+ResourceImporterFilamentUberMaterial::ResourceImporterFilamentUberMaterial() {
 }

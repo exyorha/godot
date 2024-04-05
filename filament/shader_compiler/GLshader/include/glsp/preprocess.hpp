@@ -55,6 +55,8 @@ namespace process {
 			return *pos++;
 		}
 
+		std::string expand(const std::string &value) const;
+
 		std::stringstream &output;
 
 	private:

@@ -362,6 +362,14 @@ void FilamentRenderingServerBackend::shader_set_package(RID p_shader, const Vect
 	}
 }
 
+String FilamentRenderingServerBackend::shader_get_name(RID p_shader) const {
+	auto shader = m_objectManager.resolve<FilamentShaderObject>(p_shader);
+	if(shader) {
+		return shader->name();
+	}
+	return String();
+}
+
 void FilamentRenderingServerBackend::shader_set_path_hint(RID p_shader, const String & p_path)  {
 	printf("FilamentRenderingServerBackend::%s stub!\n", "shader_set_path_hint");
 };

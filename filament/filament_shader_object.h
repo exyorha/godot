@@ -30,6 +30,8 @@ public:
 
 	void getShaderParameterList(List<PropertyInfo> &parameterList);
 
+	String name() const;
+
 private:
 	FilamentEngineObject<filament::Material> m_material;
 	FilamentMaterialPropertyBundle m_properties;

@@ -5,9 +5,15 @@
 #include <sstream>
 
 #include "filament_material_parser.h"
+#include "filament_ubershader_variant.h"
 
-FilamentMaterialParser::FilamentMaterialParser() : m_outputStream(OutputStream::Fragment) {
+FilamentMaterialParser::FilamentMaterialParser(const FilamentUbershaderVariant *ubershaderVariant) :
+	m_ubershaderVariant(ubershaderVariant),
+	m_outputStream(OutputStream::Fragment) {
 
+	if(m_ubershaderVariant) {
+		m_builder.name(("unnamed_" + m_ubershaderVariant->name()).c_str());
+	}
 }
 
 FilamentMaterialParser::~FilamentMaterialParser() = default;
@@ -134,7 +140,16 @@ bool FilamentMaterialParser::convertNumber<float>(glshader::process::pragma_eval
 }
 
 bool FilamentMaterialParser::process_pragma(glshader::process::pragma_evaluation_context &&context) {
-	if(context.is_at_end() || context.get() != "material") {
+	if(context.is_at_end()) {
+		return false;
+	}
+
+	const auto &pragma = context.get();
+	if(m_ubershaderVariant && pragma == "uber") {
+		return true;
+	}
+
+	if(pragma != "material") {
 		return false;
 	}
 
@@ -166,6 +181,11 @@ bool FilamentMaterialParser::process_pragma(glshader::process::pragma_evaluation
 
 			name.append(context.get());
 		} while(!context.is_at_end());
+
+		if(m_ubershaderVariant) {
+			name.push_back('_');
+			name.append(m_ubershaderVariant->name());
+		}
 
 		m_builder.name(name.c_str());
 
@@ -490,16 +510,21 @@ void FilamentMaterialParser::switchOutputStream(glshader::process::pragma_evalua
 }
 
 
-filamat::Package FilamentMaterialParser::compileMaterialFile(const std::filesystem::path &filename, utils::JobSystem &jobs) {
+filamat::Package FilamentMaterialParser::compileMaterialFile(const std::filesystem::path &filename, utils::JobSystem &jobs,
+															 const FilamentUbershaderVariant *ubershaderVariant) {
 
 	glshader::process::state state;
 	state.add_include_dir(filename.parent_path());
 
-	FilamentMaterialParser parser;
+	FilamentMaterialParser parser(ubershaderVariant);
 
 	glshader::process::preprocess_file_info file;
 	file.file_path = filename;
 	file.pragma_processor = &parser;
+
+	if(ubershaderVariant) {
+		file.definitions = ubershaderVariant->definitions();
+	}
 
 	auto processed = state.preprocess_file(file);
 	if(!processed.valid()) {

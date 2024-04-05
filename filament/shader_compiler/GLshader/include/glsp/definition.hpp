@@ -20,7 +20,7 @@ namespace process {
     {
         definition_info() = default;
         /* Use the given string value as a macro replacement (no macro parameters). */
-        definition_info(std::string value);
+        definition_info(std::string &&value);
         /* Use the given string value as a macro replacement (no macro parameters). */
         definition_info(const char* value);
         /* Use the given value as a macro replacement (no macro parameters). Will be converted to a string via std::to_string.*/

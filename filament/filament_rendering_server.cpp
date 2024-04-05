@@ -174,6 +174,10 @@ void FilamentRenderingServer::shader_set_package(RID p_shader, const Vector<uint
 	return execute<void, RID, const Vector<uint8_t> &>(&FilamentRenderingServerBackend::shader_set_package, p_shader, p_package);
 }
 
+String FilamentRenderingServer::shader_get_name(RID p_shader) const {
+	return execute<String, RID>(&FilamentRenderingServerBackend::shader_get_name, p_shader);
+}
+
 void FilamentRenderingServer::shader_set_path_hint(RID p_shader, const String & p_path)  {
 	return execute<void, RID, const String &>(&FilamentRenderingServerBackend::shader_set_path_hint, p_shader, p_path);
 };

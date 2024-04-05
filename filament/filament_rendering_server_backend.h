@@ -57,6 +57,7 @@ public:
 	void shader_create(RID output) ;
 	void shader_set_code(RID p_shader, const String & p_code) ;
 	void shader_set_package(RID p_shader, const Vector<uint8_t> &p_package);
+	String shader_get_name(RID p_shader) const;
 	void shader_set_path_hint(RID p_shader, const String & p_path) ;
 	String shader_get_code(RID p_shader) const;
 	bool get_shader_parameter_list(RID p_shader, List<PropertyInfo> * p_param_list) const;

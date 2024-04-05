@@ -247,3 +247,11 @@ void FilamentShaderObject::getShaderParameterList(List<PropertyInfo> &parameterL
 	}
 
 }
+
+String FilamentShaderObject::name() const {
+	if(m_material) {
+		return String::utf8(m_material->getName());
+	} else {
+		return String();
+	}
+}
