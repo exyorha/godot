@@ -37,12 +37,6 @@ Ref<Resource> ResourceFormatLoaderFilamentMaterial::load(const String &p_path, c
 	Vector<uint8_t> buffer = FileAccess::get_file_as_bytes(p_path, &error);
 	ERR_FAIL_COND_V_MSG(error, nullptr, "Cannot load shader: " + p_path);
 
-	String str;
-	if (buffer.size() > 0) {
-		error = str.parse_utf8((const char *)buffer.ptr(), buffer.size());
-		ERR_FAIL_COND_V_MSG(error, nullptr, "Cannot parse shader: " + p_path);
-	}
-
 	Ref<FilamentMaterial> shader;
 	shader.instantiate();
 
