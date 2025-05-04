@@ -49,6 +49,7 @@ Error RDShaderFile::parse_versions_from_text(const String &p_text, const String 
 		"tesselation_control",
 		"tesselation_evaluation",
 		"compute",
+		"geometry"
 	};
 	String stage_code[RD::SHADER_STAGE_MAX];
 	int stages_found = 0;
