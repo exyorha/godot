@@ -375,7 +375,7 @@ uint32_t RenderingDeviceDriverVulkan::SubgroupCapabilities::supported_stages_fla
 		flags += SHADER_STAGE_TESSELATION_EVALUATION_BIT;
 	}
 	if (supported_stages & VK_SHADER_STAGE_GEOMETRY_BIT) {
-		// FIXME: Add shader stage geometry bit.
+		flags += SHADER_STAGE_GEOMETRY_BIT;
 	}
 	if (supported_stages & VK_SHADER_STAGE_FRAGMENT_BIT) {
 		flags += SHADER_STAGE_FRAGMENT_BIT;
@@ -3432,6 +3432,7 @@ static VkShaderStageFlagBits RD_STAGE_TO_VK_SHADER_STAGE_BITS[RDD::SHADER_STAGE_
 	VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
 	VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
 	VK_SHADER_STAGE_COMPUTE_BIT,
+	VK_SHADER_STAGE_GEOMETRY_BIT
 };
 
 String RenderingDeviceDriverVulkan::shader_get_binary_cache_key() {
