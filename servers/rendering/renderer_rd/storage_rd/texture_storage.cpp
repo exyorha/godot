@@ -1688,13 +1688,19 @@ void TextureStorage::texture_rd_initialize(RID p_texture, const RID &p_rd_textur
 	ERR_FAIL_COND(!RD::get_singleton()->texture_is_valid(p_rd_texture));
 
 	// TODO : investigate if we can support this, will need to be able to obtain the order and obtain the slice info
-	ERR_FAIL_COND_MSG(RD::get_singleton()->texture_is_shared(p_rd_texture), "Please create the texture object using the original texture");
+	//ERR_FAIL_COND_MSG(RD::get_singleton()->texture_is_shared(p_rd_texture), "Please create the texture object using the original texture");
 
 	RD::TextureFormat tf = RD::get_singleton()->texture_get_format(p_rd_texture);
 	ERR_FAIL_COND(!(tf.usage_bits & RD::TEXTURE_USAGE_SAMPLING_BIT));
 
 	TextureFromRDFormat imfmt;
-	_texture_format_from_rd(tf.format, imfmt);
+	RD::DataFormat view_format;
+	if(tf.viewed_as_format == RD::DATA_FORMAT_MAX) {
+		view_format = tf.format;
+	} else {
+		view_format = tf.viewed_as_format;
+	}
+	_texture_format_from_rd(view_format, imfmt);
 	ERR_FAIL_COND(imfmt.image_format == Image::FORMAT_MAX);
 
 	Texture texture;
@@ -2654,7 +2660,7 @@ void TextureStorage::_texture_format_from_rd(RD::DataFormat p_rd_format, Texture
 		} break; // astc 8x8
 
 		default: {
-			ERR_FAIL_MSG("Unsupported image format");
+			ERR_FAIL_MSG(vformat("Unsupported image format: %d", int(p_rd_format)));
 		}
 	}
 }
