@@ -1105,6 +1105,7 @@ RID RenderingDevice::texture_create_shared(const TextureView &p_view, RID p_with
 		ERR_FAIL_COND_V_MSG(!texture.allowed_shared_formats.has(p_view.format_override), RID(),
 				"Format override is not in the list of allowed shareable formats for original texture.");
 		tv.format = p_view.format_override;
+		texture.viewed_as_format = tv.format;
 		create_shared = driver->texture_can_make_shared_with_format(texture.driver_id, p_view.format_override, raw_reintepretation);
 	}
 	tv.swizzle_r = p_view.swizzle_r;
@@ -2196,6 +2197,7 @@ RD::TextureFormat RenderingDevice::texture_get_format(RID p_texture) {
 	TextureFormat tf;
 
 	tf.format = tex->format;
+	tf.viewed_as_format = tex->viewed_as_format;
 	tf.width = tex->width;
 	tf.height = tex->height;
 	tf.depth = tex->depth;

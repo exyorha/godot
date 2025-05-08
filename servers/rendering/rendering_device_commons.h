@@ -395,6 +395,7 @@ public:
 
 	struct TextureFormat {
 		DataFormat format = DATA_FORMAT_R8_UNORM;
+		DataFormat viewed_as_format = DATA_FORMAT_MAX;
 		uint32_t width = 1;
 		uint32_t height = 1;
 		uint32_t depth = 1;
@@ -409,6 +410,8 @@ public:
 
 		bool operator==(const TextureFormat &b) const {
 			if (format != b.format) {
+				return false;
+			} else if (viewed_as_format != b.viewed_as_format) {
 				return false;
 			} else if (width != b.width) {
 				return false;

@@ -295,6 +295,7 @@ public:
 
 		TextureType type = TEXTURE_TYPE_MAX;
 		DataFormat format = DATA_FORMAT_MAX;
+		DataFormat viewed_as_format = DATA_FORMAT_MAX;
 		TextureSamples samples = TEXTURE_SAMPLES_MAX;
 		TextureSliceType slice_type = TEXTURE_SLICE_MAX;
 		Rect2i slice_rect;
@@ -337,6 +338,7 @@ public:
 		TextureFormat texture_format() const {
 			TextureFormat tf;
 			tf.format = format;
+			tf.viewed_as_format = viewed_as_format;
 			tf.width = width;
 			tf.height = height;
 			tf.depth = depth;
